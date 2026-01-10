@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartonization Visualizer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="cartonization.bundle.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      overflow: hidden;
+    }
+    
+    .container {
+      display: grid;
+      grid-template-columns: 300px 1fr 280px;
+      height: 100vh;
+    }
+    
+    /* Left Panel - Product Search */
+    .panel-left {
+      background: #12121a;
+      border-right: 1px solid #2a2a3a;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .panel-header {
+      padding: 16px;
+      border-bottom: 1px solid #2a2a3a;
+    }
+    
+    .panel-header h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+    
+    .search-box {
+      width: 100%;
+      padding: 10px 12px;
+      background: #1a1a25;
+      border: 1px solid #2a2a3a;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .search-box:focus {
+      border-color: #4a9eff;
+    }
+    
+    .product-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    
+    .product-item {
+      padding: 12px;
+      background: #1a1a25;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    
+    .product-item:hover {
+      background: #22222f;
+      border-color: #3a3a4a;
+    }
+    
+    .product-item .sku {
+      font-size: 10px;
+      color: #666;
+      margin-bottom: 3px;
+    }
+    
+    .product-item .name {
+      font-size: 12px;
+      color: #fff;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+    
+    .product-item .dims {
+      font-size: 10px;
+      color: #4a9eff;
+    }
+    
+    /* Center - Dual 3D Views */
+    .panel-center {
+      display: flex;
+      flex-direction: column;
+      background: #08080c;
+    }
+    
+    .views-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      background: #2a2a3a;
+    }
+    
+    .view-pane {
+      position: relative;
+      background: #08080c;
+    }
+    
+    .view-pane canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    .view-label {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-align: center;
+      border: 1px solid #2a2a3a;
+      z-index: 10;
+    }
+    
+    .view-label .view-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    
+    .view-label .box-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+    }
+    
+    .view-label .box-dims {
+      font-size: 12px;
+      color: #4a9eff;
+      margin-top: 2px;
+    }
+    
+    .view-label.inventory .view-title { color: #4a9eff; }
+    .view-label.ideal .view-title { color: #44cc88; }
+    
+    /* Stats bar at bottom of center */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      background: #2a2a3a;
+      border-top: 1px solid #2a2a3a;
+    }
+    
+    .stats-pane {
+      background: #0d0d12;
+      padding: 12px 16px;
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+    }
+    
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-item .label {
+      font-size: 9px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    
+    .stat-item .value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+    
+    .stat-item .value.highlight { color: #4a9eff; }
+    .stat-item .value.success { color: #44cc88; }
+    .stat-item .value.warning { color: #ffaa00; }
+    
+    .savings-badge {
+      position: absolute;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(68, 204, 136, 0.2);
+      border: 1px solid #44cc88;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #44cc88;
+      z-index: 10;
+    }
+    
+    /* Right Panel - Cart & Box Management */
+    .panel-right {
+      background: #12121a;
+      border-left: 1px solid #2a2a3a;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .cart-section {
+      padding: 16px;
+      border-bottom: 1px solid #2a2a3a;
+      max-height: 35%;
+      overflow-y: auto;
+    }
+    
+    .cart-section h2, .boxes-section h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .cart-count {
+      background: #4a9eff;
+      color: #fff;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    
+    .padding-control {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: #1a1a25;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    
+    .padding-control label {
+      font-size: 11px;
+      color: #888;
+    }
+    
+    .padding-input-wrap {
+      display: flex;
+      align-items: center;
+      background: #0d0d12;
+      border: 1px solid #2a2a3a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .padding-input-wrap:focus-within {
+      border-color: #4a9eff;
+    }
+    
+    .padding-input-wrap input {
+      width: 50px;
+      padding: 6px 8px;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 12px;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+    
+    .padding-input-wrap input::-webkit-outer-spin-button,
+    .padding-input-wrap input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    .padding-input-wrap input:focus {
+      outline: none;
+    }
+    
+    .padding-unit {
+      font-size: 11px;
+      color: #666;
+      padding-right: 8px;
+      background: #0d0d12;
+    }
+    
+    .cart-empty {
+      color: #555;
+      font-size: 12px;
+      text-align: center;
+      padding: 20px 10px;
+    }
+    
+    .cart-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      background: #1a1a25;
+      border-radius: 6px;
+      margin-bottom: 6px;
+    }
+    
+    .cart-item .item-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    
+    .cart-item .item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .cart-item .item-name {
+      font-size: 11px;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .cart-item .item-dims {
+      font-size: 10px;
+      color: #666;
+    }
+    
+    .cart-item .item-qty {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .cart-item .qty-btn {
+      width: 20px;
+      height: 20px;
+      border: none;
+      background: #2a2a3a;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .cart-item .qty-btn:hover {
+      background: #3a3a4a;
+    }
+    
+    .cart-item .qty-btn.remove {
+      background: #4a2a2a;
+      color: #ff6b6b;
+      margin-left: 4px;
+    }
+    
+    .cart-item .qty-btn.remove:hover {
+      background: #5a3a3a;
+    }
+    
+    .cart-item .qty-value {
+      font-size: 12px;
+      min-width: 16px;
+      text-align: center;
+    }
+    
+    /* Box Management */
+    .boxes-section {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    
+    .box-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .box-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      background: #1a1a25;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .box-item:hover {
+      background: #22222f;
+    }
+    
+    .box-item.disabled {
+      opacity: 0.4;
+    }
+    
+    .box-item .box-check {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #3a3a4a;
+      border-radius: 3px;
+      margin-right: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    
+    .box-item.enabled .box-check {
+      background: #4a9eff;
+      border-color: #4a9eff;
+    }
+    
+    .box-item .box-check::after {
+      content: '✓';
+      color: #fff;
+      font-size: 10px;
+      opacity: 0;
+    }
+    
+    .box-item.enabled .box-check::after {
+      opacity: 1;
+    }
+    
+    .box-item .box-info {
+      flex: 1;
+    }
+    
+    .box-item .box-name {
+      font-size: 11px;
+      color: #fff;
+    }
+    
+    .box-item .box-dims {
+      font-size: 10px;
+      color: #666;
+    }
+    
+    .box-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .box-action-btn {
+      flex: 1;
+      padding: 6px 10px;
+      background: #1a1a25;
+      border: 1px solid #2a2a3a;
+      border-radius: 4px;
+      color: #888;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .box-action-btn:hover {
+      background: #22222f;
+      color: #fff;
+    }
+    
+    /* Loading state */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #555;
+    }
+    
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #1a1a25;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #3a3a4a;
+      border-radius: 3px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4a4a5a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Left Panel: Product Search -->
+    <div class="panel-left">
+      <div class="panel-header">
+        <h2>Product Catalog</h2>
+        <input type="text" class="search-box" id="search" placeholder="Search by SKU or name...">
+      </div>
+      <div class="product-list" id="product-list">
+        <div class="loading">Loading products...</div>
+      </div>
+    </div>
+    
+    <!-- Center: Dual 3D Views -->
+    <div class="panel-center">
+      <div class="views-container">
+        <!-- Inventory Box View -->
+        <div class="view-pane" id="view-inventory">
+          <div class="view-label inventory">
+            <div class="view-title">Texas Art Box Inventory</div>
+            <div class="box-name" id="inventory-box-name">No items</div>
+            <div class="box-dims" id="inventory-box-dims">Add items to cart</div>
+          </div>
+        </div>
+        
+        <!-- Ideal Box View -->
+        <div class="view-pane" id="view-ideal">
+          <div class="view-label ideal">
+            <div class="view-title">Ideal Box</div>
+            <div class="box-name" id="ideal-box-name">No items</div>
+            <div class="box-dims" id="ideal-box-dims">Add items to cart</div>
+          </div>
+          <div class="savings-badge" id="savings-badge" style="display: none;">
+            Save 0% DIM weight
+          </div>
+        </div>
+      </div>
+      
+      <!-- Stats Bar -->
+      <div class="stats-bar">
+        <div class="stats-pane" id="stats-inventory">
+          <div class="stat-item">
+            <div class="label">Volume</div>
+            <div class="value" id="inv-volume">-</div>
+          </div>
+          <div class="stat-item">
+            <div class="label">DIM Wt</div>
+            <div class="value highlight" id="inv-dim">-</div>
+          </div>
+          <div class="stat-item">
+            <div class="label">Billable</div>
+            <div class="value warning" id="inv-billable">-</div>
+          </div>
+          <div class="stat-item">
+            <div class="label">Fill %</div>
+            <div class="value" id="inv-efficiency">-</div>
+          </div>
+        </div>
+        <div class="stats-pane" id="stats-ideal">
+          <div class="stat-item">
+            <div class="label">Volume</div>
+            <div class="value" id="ideal-volume">-</div>
+          </div>
+          <div class="stat-item">
+            <div class="label">DIM Wt</div>
+            <div class="value highlight" id="ideal-dim">-</div>
+          </div>
+          <div class="stat-item">
+            <div class="label">Billable</div>
+            <div class="value success" id="ideal-billable">-</div>
+          </div>
+          <div class="stat-item">
+            <div class="label">Fill %</div>
+            <div class="value" id="ideal-efficiency">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right Panel: Cart & Box Management -->
+    <div class="panel-right">
+      <div class="cart-section">
+        <h2>Cart <span class="cart-count" id="cart-count">0</span></h2>
+        <div class="padding-control">
+          <label for="padding-input">Padding (per side):</label>
+          <div class="padding-input-wrap">
+            <input type="number" id="padding-input" value="0.25" min="0" max="2" step="0.125">
+            <span class="padding-unit">in</span>
+          </div>
+        </div>
+        <div id="cart-list">
+          <div class="cart-empty">Click products to add</div>
+        </div>
+      </div>
+      
+      <div class="boxes-section">
+        <h2>Box Inventory</h2>
+        <div class="box-actions">
+          <button class="box-action-btn" onclick="toggleAllBoxes(true)">Enable All</button>
+          <button class="box-action-btn" onclick="toggleAllBoxes(false)">Disable All</button>
+        </div>
+        <div class="box-list" id="box-list">
+          <div class="loading">Loading boxes...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // DATA
+    // =========================================================================
+    let products = [];
+    let boxes = [];
+    let enabledBoxes = new Set();
+    let cart = [];
+    
+    let cartonService = null;
+    
+    const itemColors = [
+      0x4a9eff, 0x44cc88, 0xff6b6b, 0xffd93d, 0x6c5ce7,
+      0x00cec9, 0xfd79a8, 0xe17055, 0x74b9ff, 0x55efc4
+    ];
+    let colorIndex = 0;
+    
+    // =========================================================================
+    // THREE.JS - Dual Renderers
+    // =========================================================================
+    let sceneInv, cameraInv, rendererInv, boxGroupInv = null;
+    let sceneIdeal, cameraIdeal, rendererIdeal, boxGroupIdeal = null;
+    let isRotating = true;
+    
+    function initThreeJS() {
+      // Inventory view
+      const containerInv = document.getElementById('view-inventory');
+      sceneInv = new THREE.Scene();
+      sceneInv.background = new THREE.Color(0x08080c);
+      cameraInv = new THREE.PerspectiveCamera(45, containerInv.clientWidth / containerInv.clientHeight, 0.1, 1000);
+      cameraInv.position.set(35, 25, 35);
+      cameraInv.lookAt(0, 0, 0);
+      rendererInv = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+      rendererInv.setSize(containerInv.clientWidth, containerInv.clientHeight);
+      rendererInv.setPixelRatio(window.devicePixelRatio);
+      containerInv.appendChild(rendererInv.domElement);
+      addLightsAndGrid(sceneInv);
+      setupControls(rendererInv.domElement, cameraInv);
+      
+      // Ideal view
+      const containerIdeal = document.getElementById('view-ideal');
+      sceneIdeal = new THREE.Scene();
+      sceneIdeal.background = new THREE.Color(0x08080c);
+      cameraIdeal = new THREE.PerspectiveCamera(45, containerIdeal.clientWidth / containerIdeal.clientHeight, 0.1, 1000);
+      cameraIdeal.position.set(35, 25, 35);
+      cameraIdeal.lookAt(0, 0, 0);
+      rendererIdeal = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+      rendererIdeal.setSize(containerIdeal.clientWidth, containerIdeal.clientHeight);
+      rendererIdeal.setPixelRatio(window.devicePixelRatio);
+      containerIdeal.appendChild(rendererIdeal.domElement);
+      addLightsAndGrid(sceneIdeal);
+      setupControls(rendererIdeal.domElement, cameraIdeal);
+      
+      // Handle resize
+      window.addEventListener('resize', () => {
+        const w1 = containerInv.clientWidth, h1 = containerInv.clientHeight;
+        const w2 = containerIdeal.clientWidth, h2 = containerIdeal.clientHeight;
+        cameraInv.aspect = w1 / h1;
+        cameraInv.updateProjectionMatrix();
+        rendererInv.setSize(w1, h1);
+        cameraIdeal.aspect = w2 / h2;
+        cameraIdeal.updateProjectionMatrix();
+        rendererIdeal.setSize(w2, h2);
+      });
+      
+      animate();
+    }
+    
+    function addLightsAndGrid(scene) {
+      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      const dir1 = new THREE.DirectionalLight(0xffffff, 0.8);
+      dir1.position.set(50, 50, 50);
+      scene.add(dir1);
+      const dir2 = new THREE.DirectionalLight(0xffffff, 0.3);
+      dir2.position.set(-50, 30, -50);
+      scene.add(dir2);
+      const grid = new THREE.GridHelper(50, 25, 0x2a2a3a, 0x1a1a25);
+      grid.position.y = -0.1;
+      scene.add(grid);
+    }
+    
+    function setupControls(domElement, camera) {
+      let isDragging = false;
+      let prev = { x: 0, y: 0 };
+      
+      domElement.addEventListener('mousedown', () => { isDragging = true; isRotating = false; });
+      domElement.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          const spherical = new THREE.Spherical();
+          spherical.setFromVector3(camera.position);
+          spherical.theta -= (e.clientX - prev.x) * 0.01;
+          spherical.phi -= (e.clientY - prev.y) * 0.01;
+          spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+          camera.position.setFromSpherical(spherical);
+          camera.lookAt(0, 0, 0);
+        }
+        prev = { x: e.clientX, y: e.clientY };
+      });
+      domElement.addEventListener('mouseup', () => isDragging = false);
+      domElement.addEventListener('mouseleave', () => isDragging = false);
+      domElement.addEventListener('wheel', (e) => {
+        const dist = camera.position.length();
+        camera.position.setLength(Math.max(15, Math.min(80, dist * (1 + (e.deltaY > 0 ? 0.1 : -0.1)))));
+      });
+    }
+    
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      if (isRotating) {
+        [cameraInv, cameraIdeal].forEach(camera => {
+          const spherical = new THREE.Spherical();
+          spherical.setFromVector3(camera.position);
+          spherical.theta += 0.002;
+          camera.position.setFromSpherical(spherical);
+          camera.lookAt(0, 0, 0);
+        });
+      }
+      
+      rendererInv.render(sceneInv, cameraInv);
+      rendererIdeal.render(sceneIdeal, cameraIdeal);
+    }
+    
+    // =========================================================================
+    // VISUALIZATION
+    // =========================================================================
+    function visualizeResult(result, scene, existingGroup, boxColor, scale) {
+      if (existingGroup) scene.remove(existingGroup);
+      if (!result || !result.box) return null;
+      
+      const box = result.box;
+      const group = new THREE.Group();
+      
+      const boxGeo = new THREE.BoxGeometry(box.length * scale, box.height * scale, box.width * scale);
+      
+      // Wireframe
+      const edges = new THREE.EdgesGeometry(boxGeo);
+      const wire = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: boxColor, transparent: true, opacity: 0.8 }));
+      wire.renderOrder = 999;
+      group.add(wire);
+      
+      // Faces
+      const faces = new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({ color: boxColor, transparent: true, opacity: 0.03, side: THREE.BackSide, depthWrite: false }));
+      group.add(faces);
+      
+      // Items
+      if (result.packedItems) {
+        result.packedItems.forEach((item, i) => {
+          const itemGeo = new THREE.BoxGeometry(item.packedLength * scale, item.packedHeight * scale, item.packedWidth * scale);
+          const itemMat = new THREE.MeshPhongMaterial({ color: item.color || itemColors[i % itemColors.length], polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+          const itemMesh = new THREE.Mesh(itemGeo, itemMat);
+          itemMesh.position.set(
+            (item.x + item.packedLength / 2 - box.length / 2) * scale,
+            (item.y + item.packedHeight / 2 - box.height / 2) * scale,
+            (item.z + item.packedWidth / 2 - box.width / 2) * scale
+          );
+          group.add(itemMesh);
+          
+          const edgeGeo = new THREE.EdgesGeometry(itemGeo);
+          const edgeMat = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
+          const itemEdges = new THREE.LineSegments(edgeGeo, edgeMat);
+          itemEdges.position.copy(itemMesh.position);
+          itemEdges.scale.setScalar(1.001);
+          group.add(itemEdges);
+        });
+      }
+      
+      group.position.y = (box.height * scale) / 2;
+      scene.add(group);
+      return group;
+    }
+    
+    // =========================================================================
+    // CARTONIZATION
+    // =========================================================================
+    function runCartonization() {
+      if (cart.length === 0) {
+        clearResults();
+        return;
+      }
+      
+      // Get padding value (per side, so total padding per dimension is 2x)
+      const paddingPerSide = parseFloat(document.getElementById('padding-input').value) || 0;
+      
+      const items = cart.map(c => ({
+        sku: c.product.sku,
+        quantity: c.quantity,
+        length: c.product.length,
+        width: c.product.width,
+        height: c.product.height,
+        weight: c.product.weight,
+        color: c.color
+      }));
+      
+      // Inventory result (using enabled boxes only)
+      const activeBoxes = boxes.filter(b => enabledBoxes.has(b.name));
+      cartonService.setBoxInventory(activeBoxes);
+      const invResult = cartonService.packItems(items, paddingPerSide);
+      
+      // Ideal result (no box constraints)
+      const idealResult = cartonService.packItemsIdeal(items, paddingPerSide);
+      
+      // Calculate shared scale based on largest box
+      const maxDim = Math.max(
+        invResult?.box?.length || 1, invResult?.box?.width || 1, invResult?.box?.height || 1,
+        idealResult?.box?.length || 1, idealResult?.box?.width || 1, idealResult?.box?.height || 1
+      );
+      const sharedScale = 18 / maxDim; // Target ~18 units in Three.js space
+      
+      // Visualize with shared scale
+      boxGroupInv = visualizeResult(invResult, sceneInv, boxGroupInv, 0x4a9eff, sharedScale);
+      boxGroupIdeal = visualizeResult(idealResult, sceneIdeal, boxGroupIdeal, 0x44cc88, sharedScale);
+      
+      // Update labels
+      updateLabels(invResult, idealResult);
+      updateStats(invResult, idealResult);
+    }
+    
+    function clearResults() {
+      if (boxGroupInv) { sceneInv.remove(boxGroupInv); boxGroupInv = null; }
+      if (boxGroupIdeal) { sceneIdeal.remove(boxGroupIdeal); boxGroupIdeal = null; }
+      
+      document.getElementById('inventory-box-name').textContent = 'No items';
+      document.getElementById('inventory-box-dims').textContent = 'Add items to cart';
+      document.getElementById('ideal-box-name').textContent = 'No items';
+      document.getElementById('ideal-box-dims').textContent = 'Add items to cart';
+      document.getElementById('savings-badge').style.display = 'none';
+      
+      ['inv-volume', 'inv-dim', 'inv-billable', 'inv-efficiency', 'ideal-volume', 'ideal-dim', 'ideal-billable', 'ideal-efficiency'].forEach(id => {
+        document.getElementById(id).textContent = '-';
+      });
+    }
+    
+    function updateLabels(invResult, idealResult) {
+      if (invResult && invResult.box) {
+        document.getElementById('inventory-box-name').textContent = invResult.box.name;
+        document.getElementById('inventory-box-dims').textContent = `${invResult.box.length}" × ${invResult.box.width}" × ${invResult.box.height}"`;
+      }
+      if (idealResult && idealResult.box) {
+        document.getElementById('ideal-box-name').textContent = 'Perfect Fit';
+        document.getElementById('ideal-box-dims').textContent = `${idealResult.box.length}" × ${idealResult.box.width}" × ${idealResult.box.height}"`;
+      }
+    }
+    
+    function updateStats(invResult, idealResult) {
+      if (!invResult || !idealResult) return;
+      
+      const invVol = invResult.box.length * invResult.box.width * invResult.box.height;
+      const idealVol = idealResult.box.length * idealResult.box.width * idealResult.box.height;
+      
+      const invDim = invVol / 139;
+      const idealDim = idealVol / 139;
+      
+      const invBillable = Math.max(invResult.totalWeight, invDim);
+      const idealBillable = Math.max(idealResult.totalWeight, idealDim);
+      
+      const invEff = (invResult.itemsVolume / invVol * 100);
+      const idealEff = (idealResult.itemsVolume / idealVol * 100);
+      
+      document.getElementById('inv-volume').textContent = invVol.toLocaleString();
+      document.getElementById('inv-dim').textContent = invDim.toFixed(1);
+      document.getElementById('inv-billable').textContent = invBillable.toFixed(1);
+      document.getElementById('inv-efficiency').textContent = invEff.toFixed(0) + '%';
+      
+      document.getElementById('ideal-volume').textContent = idealVol.toLocaleString();
+      document.getElementById('ideal-dim').textContent = idealDim.toFixed(1);
+      document.getElementById('ideal-billable').textContent = idealBillable.toFixed(1);
+      document.getElementById('ideal-efficiency').textContent = idealEff.toFixed(0) + '%';
+      
+      // Savings badge
+      if (invDim > idealDim) {
+        const savings = ((invDim - idealDim) / invDim * 100).toFixed(0);
+        document.getElementById('savings-badge').textContent = `${savings}% less DIM weight`;
+        document.getElementById('savings-badge').style.display = 'block';
+      } else {
+        document.getElementById('savings-badge').style.display = 'none';
+      }
+    }
+    
+    // =========================================================================
+    // UI FUNCTIONS
+    // =========================================================================
+    function renderProducts(filter = '') {
+      const list = document.getElementById('product-list');
+      const filtered = products.filter(p => 
+        p.sku.toLowerCase().includes(filter.toLowerCase()) ||
+        p.product_title.toLowerCase().includes(filter.toLowerCase())
+      ).slice(0, 100);
+      
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="cart-empty">No products found</div>';
+        return;
+      }
+      
+      list.innerHTML = filtered.map(p => `
+        <div class="product-item" onclick="addToCart('${p.sku}')">
+          <div class="sku">${p.sku}</div>
+          <div class="name">${p.product_title}</div>
+          <div class="dims">${p.length}" × ${p.width}" × ${p.height}" | ${p.weight} lbs</div>
+        </div>
+      `).join('');
+    }
+    
+    function addToCart(sku) {
+      const product = products.find(p => p.sku === sku);
+      if (!product) return;
+      
+      const existing = cart.find(item => item.product.sku === sku);
+      if (existing) {
+        existing.quantity++;
+      } else {
+        cart.push({ product, quantity: 1, color: itemColors[colorIndex++ % itemColors.length] });
+      }
+      
+      renderCart();
+      runCartonization();
+    }
+    
+    function updateQuantity(sku, delta) {
+      const item = cart.find(i => i.product.sku === sku);
+      if (!item) return;
+      item.quantity += delta;
+      if (item.quantity <= 0) cart = cart.filter(i => i.product.sku !== sku);
+      renderCart();
+      runCartonization();
+    }
+    
+    function removeFromCart(sku) {
+      cart = cart.filter(i => i.product.sku !== sku);
+      renderCart();
+      runCartonization();
+    }
+    
+    function renderCart() {
+      document.getElementById('cart-count').textContent = cart.reduce((s, i) => s + i.quantity, 0);
+      const list = document.getElementById('cart-list');
+      if (cart.length === 0) {
+        list.innerHTML = '<div class="cart-empty">Click products to add</div>';
+        return;
+      }
+      list.innerHTML = cart.map(item => `
+        <div class="cart-item">
+          <div class="item-color" style="background: #${item.color.toString(16).padStart(6, '0')}"></div>
+          <div class="item-info">
+            <div class="item-name">${item.product.product_title}</div>
+            <div class="item-dims">${item.product.length}" × ${item.product.width}" × ${item.product.height}"</div>
+          </div>
+          <div class="item-qty">
+            <button class="qty-btn" onclick="updateQuantity('${item.product.sku}', -1)">−</button>
+            <span class="qty-value">${item.quantity}</span>
+            <button class="qty-btn" onclick="updateQuantity('${item.product.sku}', 1)">+</button>
+            <button class="qty-btn remove" onclick="removeFromCart('${item.product.sku}')" title="Remove">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function renderBoxes() {
+      const list = document.getElementById('box-list');
+      list.innerHTML = boxes.map(b => `
+        <div class="box-item ${enabledBoxes.has(b.name) ? 'enabled' : 'disabled'}" onclick="toggleBox('${b.name}')">
+          <div class="box-check"></div>
+          <div class="box-info">
+            <div class="box-name">${b.name}</div>
+            <div class="box-dims">${b.length}" × ${b.width}" × ${b.height}"</div>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function toggleBox(name) {
+      if (enabledBoxes.has(name)) enabledBoxes.delete(name);
+      else enabledBoxes.add(name);
+      renderBoxes();
+      runCartonization();
+    }
+    
+    function toggleAllBoxes(enable) {
+      if (enable) boxes.forEach(b => enabledBoxes.add(b.name));
+      else enabledBoxes.clear();
+      renderBoxes();
+      runCartonization();
+    }
+    
+    // =========================================================================
+    // INIT
+    // =========================================================================
+    async function loadData() {
+      try {
+        const [productsRes, boxesRes] = await Promise.all([
+          fetch('products.json'),
+          fetch('boxes.json')
+        ]);
+        products = await productsRes.json();
+        boxes = await boxesRes.json();
+        
+        // Enable all boxes by default
+        boxes.forEach(b => enabledBoxes.add(b.name));
+        
+        // Create cartonization service
+        cartonService = new CartonizationService(boxes);
+        
+        renderProducts();
+        renderBoxes();
+        console.log(`Loaded ${products.length} products, ${boxes.length} boxes`);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      initThreeJS();
+      loadData();
+      document.getElementById('search').addEventListener('input', (e) => renderProducts(e.target.value));
+      document.getElementById('padding-input').addEventListener('input', () => runCartonization());
+    });
+  </script>
+</body>
+</html>
