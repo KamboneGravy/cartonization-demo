@@ -1,37 +1,9 @@
-// cartonization.js - Multi-Algorithm Bin Packing Service
-// 
-// Implements three packing algorithms for comparison:
-// 1. FFD (First Fit Decreasing) - via binpackingjs
-// 2. EB-AFIT (Extreme Back - Air Force Institute of Technology) - via 3d-bin-packing-ts
-// 3. Multi-Pass FFD - FFD with multiple item orderings, keeps best result
-//
-// COORDINATE SYSTEM (consistent across all algorithms):
-// - X = length (left/right)
-// - Y = height (up/down, vertical)
-// - Z = width (front/back)
-
+// Browser entry point - exposes CartonizationService globally
 const { BP3D } = require('binpackingjs');
 const { Container, Item: EBAFITItem, PackingService } = require('3d-bin-packing-ts');
 
 const { Item: BPItem, Bin, Packer } = BP3D;
-const SCALE = 100000; // binpackingjs internal scaling
-
-// =============================================================================
-// UNIFIED RESULT FORMAT
-// =============================================================================
-// All algorithms return results in this format:
-// {
-//   success: boolean,
-//   algorithm: string,
-//   box: { name, length, width, height, ... },
-//   packedItems: [{ sku, color, x, y, z, packedLength, packedHeight, packedWidth }],
-//   unpackedItems: [{ sku, ... }],
-//   totalWeight: number,
-//   itemsVolume: number,
-//   boxVolume: number,
-//   efficiency: number (0-100),
-//   executionTime: number (ms)
-// }
+const SCALE = 100000;
 
 class CartonizationService {
   constructor(boxes = []) {
@@ -42,14 +14,6 @@ class CartonizationService {
     this.boxInventory = boxes;
   }
 
-  // ===========================================================================
-  // ITEM EXPANSION & NORMALIZATION
-  // ===========================================================================
-  
-  /**
-   * Expand items with quantities into individual items.
-   * Normalize dimensions so that length >= width >= height.
-   */
   expandItems(items) {
     const expanded = [];
     let colorIndex = 0;
@@ -61,7 +25,6 @@ class CartonizationService {
     items.forEach(item => {
       const qty = item.quantity || 1;
       for (let i = 0; i < qty; i++) {
-        // Sort dimensions: largest to smallest
         const dims = [
           Math.max(item.length || 1, 0.1),
           Math.max(item.width || 1, 0.1),
@@ -70,7 +33,6 @@ class CartonizationService {
 
         expanded.push({
           sku: item.sku || 'unknown',
-          // Normalized: length >= width >= height
           length: dims[0],
           width: dims[1],
           height: dims[2],
@@ -84,9 +46,6 @@ class CartonizationService {
     return expanded;
   }
 
-  /**
-   * Calculate totals for a set of items
-   */
   calculateTotals(items) {
     return {
       weight: items.reduce((sum, i) => sum + i.weight, 0),
@@ -94,14 +53,10 @@ class CartonizationService {
     };
   }
 
-  /**
-   * Filter boxes that could potentially fit the items
-   */
   getValidBoxes(items, padding = 0) {
     const totals = this.calculateTotals(items);
     const pad2 = padding * 2;
 
-    // Find minimum required dimensions (largest single item)
     const allDims = items.map(i => [i.length, i.width, i.height].sort((a, b) => b - a));
     const minDims = [
       Math.max(...allDims.map(d => d[0])) + pad2,
@@ -112,7 +67,6 @@ class CartonizationService {
     return this.boxInventory
       .filter(box => {
         if (totals.weight > box.max_weight) return false;
-        
         const boxDims = [box.length, box.width, box.height].sort((a, b) => b - a);
         if (minDims[0] > boxDims[0] || minDims[1] > boxDims[1] || minDims[2] > boxDims[2]) {
           return false;
@@ -122,10 +76,7 @@ class CartonizationService {
       .sort((a, b) => (a.length * a.width * a.height) - (b.length * b.width * b.height));
   }
 
-  // ===========================================================================
-  // ALGORITHM 1: FFD (First Fit Decreasing) via binpackingjs
-  // ===========================================================================
-  
+  // FFD Algorithm
   packFFD(items, paddingPerSide = 0) {
     const startTime = performance.now();
     
@@ -141,7 +92,6 @@ class CartonizationService {
       return this.noBoxResult('ffd', expandedItems, totals, startTime);
     }
 
-    // Try each box from smallest to largest
     for (const box of validBoxes) {
       const result = this.tryPackFFD(expandedItems, box, paddingPerSide);
       if (result && result.packedItems.length === expandedItems.length) {
@@ -149,7 +99,6 @@ class CartonizationService {
       }
     }
 
-    // No box fit all items - return best partial result with largest box
     const largestBox = validBoxes[validBoxes.length - 1];
     const partialResult = this.tryPackFFD(expandedItems, largestBox, paddingPerSide);
     return this.buildResult('ffd', largestBox, partialResult, expandedItems, totals, paddingPerSide, startTime, false);
@@ -163,7 +112,6 @@ class CartonizationService {
 
     packer.addBin(new Bin('box', innerL, innerH, innerW, box.max_weight || 1000));
 
-    // Sort by volume (largest first) - standard FFD
     const sorted = [...items].sort((a, b) => 
       (b.length * b.width * b.height) - (a.length * a.width * a.height)
     );
@@ -172,7 +120,7 @@ class CartonizationService {
       packer.addItem(new BPItem(
         `${item.sku}__${item.originalIndex}`,
         item.length,
-        item.height, // binpackingjs: height is Y (vertical)
+        item.height,
         item.width,
         item.weight
       ));
@@ -210,7 +158,6 @@ class CartonizationService {
       };
     });
 
-    // Find unpacked items
     const packedIndices = new Set(packedBin.items.map(p => {
       const parts = p.name.split('__');
       return parseInt(parts[parts.length - 1], 10);
@@ -220,10 +167,7 @@ class CartonizationService {
     return { packedItems, unpackedItems };
   }
 
-  // ===========================================================================
-  // ALGORITHM 2: EB-AFIT via 3d-bin-packing-ts
-  // ===========================================================================
-
+  // EB-AFIT Algorithm
   packEBAFIT(items, paddingPerSide = 0) {
     const startTime = performance.now();
 
@@ -239,7 +183,6 @@ class CartonizationService {
       return this.noBoxResult('eb-afit', expandedItems, totals, startTime);
     }
 
-    // Try each box from smallest to largest
     for (const box of validBoxes) {
       const result = this.tryPackEBAFIT(expandedItems, box, paddingPerSide);
       if (result && result.packedItems.length === expandedItems.length) {
@@ -247,7 +190,6 @@ class CartonizationService {
       }
     }
 
-    // No box fit all items
     const largestBox = validBoxes[validBoxes.length - 1];
     const partialResult = this.tryPackEBAFIT(expandedItems, largestBox, paddingPerSide);
     return this.buildResult('eb-afit', largestBox, partialResult, expandedItems, totals, paddingPerSide, startTime, false);
@@ -258,10 +200,8 @@ class CartonizationService {
     const innerW = box.width - padding * 2;
     const innerH = box.height - padding * 2;
 
-    // 3d-bin-packing-ts Container: (id, length, width, height)
     const container = new Container('box', innerL, innerW, innerH);
 
-    // Item constructor: (id, dim1, dim2, dim3, quantity)
     const ebafitItems = items.map((item, i) => 
       new EBAFITItem(`${item.sku}__${item.originalIndex}`, item.length, item.width, item.height, 1)
     );
@@ -275,42 +215,6 @@ class CartonizationService {
 
     const itemMap = new Map();
     items.forEach(item => itemMap.set(item.originalIndex, item));
-
-    // DEBUG: Log what we're working with
-    console.log('=== EB-AFIT DEBUG ===');
-    console.log('Box dimensions:', { length: box.length, width: box.width, height: box.height });
-    console.log('Inner dimensions:', { innerL, innerW, innerH });
-    console.log('Container created:', { length: container.length, width: container.width, height: container.height });
-    console.log('Complete packed:', packResult.isCompletePacked);
-    console.log('');
-    
-    // Check each packed item
-    let hasOverflow = false;
-    packResult.packedItems.forEach((p, i) => {
-      const maxX = p.coordX + p.packDimX;
-      const maxY = p.coordY + p.packDimY;
-      const maxZ = p.coordZ + p.packDimZ;
-      
-      const overflowX = maxX > innerL;
-      const overflowY = maxY > innerH;  // Height is vertical
-      const overflowZ = maxZ > innerW;
-      
-      if (overflowX || overflowY || overflowZ) hasOverflow = true;
-      
-      console.log(`Item ${i}: ${p.id}`);
-      console.log(`  Position: (${p.coordX.toFixed(2)}, ${p.coordY.toFixed(2)}, ${p.coordZ.toFixed(2)})`);
-      console.log(`  PackDims: (${p.packDimX.toFixed(2)}, ${p.packDimY.toFixed(2)}, ${p.packDimZ.toFixed(2)})`);
-      console.log(`  Max extent: (${maxX.toFixed(2)}, ${maxY.toFixed(2)}, ${maxZ.toFixed(2)})`);
-      console.log(`  Limits: (${innerL}, ${innerH}, ${innerW})`);
-      if (overflowX) console.log(`  ⚠️ OVERFLOW X: ${maxX} > ${innerL}`);
-      if (overflowY) console.log(`  ⚠️ OVERFLOW Y: ${maxY} > ${innerH}`);
-      if (overflowZ) console.log(`  ⚠️ OVERFLOW Z: ${maxZ} > ${innerW}`);
-    });
-    
-    if (hasOverflow) {
-      console.log('\n⚠️ ITEMS OVERFLOW BOX BOUNDS - visualization will be incorrect');
-    }
-    console.log('=== END DEBUG ===\n');
 
     const packedItems = packResult.packedItems.map(packed => {
       const nameParts = packed.id.split('__');
@@ -338,10 +242,7 @@ class CartonizationService {
     return { packedItems, unpackedItems };
   }
 
-  // ===========================================================================
-  // ALGORITHM 3: Multi-Pass FFD (try multiple orderings, keep best)
-  // ===========================================================================
-
+  // Multi-Pass FFD Algorithm
   packMultiPassFFD(items, paddingPerSide = 0) {
     const startTime = performance.now();
 
@@ -357,32 +258,28 @@ class CartonizationService {
       return this.noBoxResult('multipass-ffd', expandedItems, totals, startTime);
     }
 
-    // Define ordering strategies
     const orderings = [
       { name: 'volume', sort: (a, b) => (b.length * b.width * b.height) - (a.length * a.width * a.height) },
       { name: 'footprint', sort: (a, b) => (b.length * b.width) - (a.length * a.width) },
-      { name: 'height', sort: (a, b) => a.height - b.height }, // thinnest first
-      { name: 'length', sort: (a, b) => b.length - a.length }, // longest first
+      { name: 'height', sort: (a, b) => a.height - b.height },
+      { name: 'length', sort: (a, b) => b.length - a.length },
     ];
 
     let bestResult = null;
     let bestBox = null;
     let bestOrdering = null;
 
-    // Try each box from smallest to largest
     for (const box of validBoxes) {
       for (const ordering of orderings) {
         const sortedItems = [...expandedItems].sort(ordering.sort);
         const result = this.tryPackFFDWithOrder(sortedItems, box, paddingPerSide);
 
         if (result && result.packedItems.length === expandedItems.length) {
-          // Found a complete pack - return immediately with smallest box
           const finalResult = this.buildResult('multipass-ffd', box, result, expandedItems, totals, paddingPerSide, startTime);
           finalResult.ordering = ordering.name;
           return finalResult;
         }
 
-        // Track best partial result
         if (!bestResult || result.packedItems.length > bestResult.packedItems.length) {
           bestResult = result;
           bestBox = box;
@@ -391,7 +288,6 @@ class CartonizationService {
       }
     }
 
-    // No complete pack found - return best partial
     const finalResult = this.buildResult('multipass-ffd', bestBox, bestResult, expandedItems, totals, paddingPerSide, startTime, false);
     finalResult.ordering = bestOrdering;
     return finalResult;
@@ -425,10 +321,7 @@ class CartonizationService {
     return this.extractBinpackingResults(packedBin, sortedItems, padding);
   }
 
-  // ===========================================================================
-  // RESULT BUILDERS
-  // ===========================================================================
-
+  // Result builders
   emptyResult(algorithm, startTime) {
     return {
       success: false,
@@ -477,10 +370,6 @@ class CartonizationService {
     };
   }
 
-  // ===========================================================================
-  // CONVENIENCE: Pack with all algorithms at once
-  // ===========================================================================
-
   packAll(items, paddingPerSide = 0) {
     return {
       ffd: this.packFFD(items, paddingPerSide),
@@ -490,10 +379,4 @@ class CartonizationService {
   }
 }
 
-// Export for both Node.js and browser
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { CartonizationService };
-}
-if (typeof window !== 'undefined') {
-  window.CartonizationService = CartonizationService;
-}
+window.CartonizationService = CartonizationService;

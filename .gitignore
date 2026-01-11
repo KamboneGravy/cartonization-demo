@@ -1,9 +1,6 @@
 # Dependencies
 node_modules/
 
-# Build output
-cartonization.bundle.js
-
 # OS files
 .DS_Store
 Thumbs.db
