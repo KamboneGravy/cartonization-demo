@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Batch Simulator - Cartonization</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+    
+    /* Top Navigation */
+    .top-nav {
+      background: #12121a;
+      border-bottom: 1px solid #2a2a3a;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      height: 48px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    
+    .nav-brand {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      margin-right: 30px;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .nav-link {
+      padding: 8px 16px;
+      color: #999;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    
+    .nav-link:hover {
+      color: #fff;
+      background: #1a1a25;
+    }
+    
+    .nav-link.active {
+      color: #4a9eff;
+      background: rgba(74, 158, 255, 0.1);
+    }
+    
+    /* Main Content */
+    .main-content {
+      padding: 20px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    
+    .page-header {
+      margin-bottom: 24px;
+    }
+    
+    .page-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    
+    .page-subtitle {
+      font-size: 15px;
+      color: #999;
+    }
+    
+    /* Data Source Section */
+    .data-source {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .data-source-info {
+      flex: 1;
+    }
+    
+    .data-source-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    
+    .data-source-value {
+      font-size: 14px;
+      color: #fff;
+    }
+    
+    .data-source-meta {
+      font-size: 13px;
+      color: #888;
+      margin-top: 2px;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      background: #1a1a25;
+      border: 1px solid #2a2a3a;
+      border-radius: 4px;
+      color: #999;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .btn:hover {
+      background: #22222f;
+      color: #fff;
+      border-color: #3a3a4a;
+    }
+    
+    .btn-primary {
+      background: #4a9eff;
+      border-color: #4a9eff;
+      color: #fff;
+    }
+    
+    .btn-primary:hover {
+      background: #3a8eef;
+    }
+    
+    /* Dashboard Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-card {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    
+    .stat-value {
+      font-size: 28px;
+      font-weight: 600;
+      color: #fff;
+    }
+    
+    .stat-value.success { color: #44cc88; }
+    .stat-value.warning { color: #ffd93d; }
+    .stat-value.danger { color: #ff6b6b; }
+    
+    .stat-subtext {
+      font-size: 13px;
+      color: #888;
+      margin-top: 4px;
+    }
+    
+    /* Charts Grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .chart-card {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .chart-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 250px;
+    }
+    
+    /* Gap Analysis Section */
+    .gap-analysis {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .gap-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .gap-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+    }
+    
+    .gap-subtitle {
+      font-size: 13px;
+      color: #888;
+      margin-top: 4px;
+    }
+    
+    .gap-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    
+    .gap-card {
+      background: #1a1a25;
+      border: 1px solid #2a2a3a;
+      border-radius: 6px;
+      padding: 12px;
+    }
+    
+    .gap-card.highlight {
+      border-color: #ff6b6b;
+      background: rgba(255, 107, 107, 0.05);
+    }
+    
+    .gap-range {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a9eff;
+      margin-bottom: 8px;
+    }
+    
+    .gap-orders {
+      font-size: 22px;
+      font-weight: 600;
+      color: #fff;
+    }
+    
+    .gap-orders-label {
+      font-size: 12px;
+      color: #888;
+    }
+    
+    .gap-ideal {
+      font-size: 12px;
+      color: #999;
+      margin-top: 8px;
+    }
+    
+    .gap-forced {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #2a2a3a;
+    }
+    
+    .gap-forced-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    
+    .gap-forced-item {
+      font-size: 12px;
+      color: #999;
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+    }
+    
+    /* Failure Breakdown */
+    .failures-section {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    
+    .failures-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    
+    .failure-card {
+      background: #1a1a25;
+      border-radius: 6px;
+      padding: 12px;
+    }
+    
+    .failure-reason {
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 4px;
+    }
+    
+    .failure-count {
+      font-size: 20px;
+      font-weight: 600;
+      color: #ff6b6b;
+    }
+    
+    .failure-desc {
+      font-size: 12px;
+      color: #777;
+      margin-top: 4px;
+    }
+    
+    /* Box Usage Table */
+    .box-usage-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    
+    .box-usage-table th {
+      text-align: left;
+      padding: 8px;
+      color: #888;
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #2a2a3a;
+    }
+    
+    .box-usage-table td {
+      padding: 8px;
+      border-bottom: 1px solid #1a1a25;
+    }
+    
+    .box-usage-table tr:hover {
+      background: #1a1a25;
+    }
+    
+    .usage-bar {
+      height: 6px;
+      background: #2a2a3a;
+      border-radius: 3px;
+      overflow: hidden;
+      min-width: 100px;
+    }
+    
+    .usage-bar-fill {
+      height: 100%;
+      background: #4a9eff;
+      border-radius: 3px;
+    }
+    
+    /* Loading State */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      color: #888;
+      font-size: 14px;
+    }
+    
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #2a2a3a;
+      border-top-color: #4a9eff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px;
+      color: #888;
+    }
+    
+    .empty-state-title {
+      font-size: 18px;
+      color: #999;
+      margin-bottom: 8px;
+    }
+    
+    .empty-state-text {
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #1a1a25; }
+    ::-webkit-scrollbar-thumb { background: #3a3a4a; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4a4a5a; }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+      .gap-grid { grid-template-columns: repeat(2, 1fr); }
+      .failures-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    @media (max-width: 768px) {
+      .charts-grid { grid-template-columns: 1fr; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .gap-grid { grid-template-columns: 1fr; }
+      .failures-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="nav-brand">Cartonization Demo</div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Visualizer</a>
+      <a href="simulator.html" class="nav-link active">Batch Simulator</a>
+    </div>
+  </nav>
+  
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">Batch Simulation Results</h1>
+      <p class="page-subtitle">Analyze historical orders against current box inventory to identify optimization opportunities</p>
+    </div>
+    
+    <div id="app-content">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <div>Loading simulation results...</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let simulationData = null;
+    
+    async function loadSimulationResults() {
+      try {
+        const response = await fetch('simulation_results.json');
+        if (!response.ok) throw new Error('No results file found');
+        simulationData = await response.json();
+        renderDashboard();
+      } catch (error) {
+        console.error('Error loading results:', error);
+        renderEmptyState();
+      }
+    }
+    
+    function renderEmptyState() {
+      document.getElementById('app-content').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-title">No Simulation Results</div>
+          <div class="empty-state-text">Run the batch simulator to analyze your historical orders.</div>
+          <code style="background: #1a1a25; padding: 12px 16px; border-radius: 4px; font-size: 13px; color: #999;">
+            node batch-simulator.js
+          </code>
+        </div>
+      `;
+    }
+    
+    function renderDashboard() {
+      const { analysis, timestamp, config } = simulationData;
+      const { summary, failureReasons, boxUsage, efficiencyDistribution, lowEfficiencyCount, idealBoxAnalysis } = analysis;
+      
+      document.getElementById('app-content').innerHTML = `
+        <!-- Data Source -->
+        <div class="data-source">
+          <div class="data-source-info">
+            <div class="data-source-label">Simulation Run</div>
+            <div class="data-source-value">${new Date(timestamp).toLocaleString()}</div>
+            <div class="data-source-meta">Algorithm: ${config.algorithm} | Box Inventory: ${config.boxInventory}</div>
+          </div>
+          <button class="btn" onclick="location.reload()">Refresh</button>
+        </div>
+        
+        <!-- Summary Stats -->
+        <div class="dashboard-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Orders</div>
+            <div class="stat-value">${summary.totalOrders.toLocaleString()}</div>
+            <div class="stat-subtext">Historical orders analyzed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Successfully Packed</div>
+            <div class="stat-value success">${summary.successful.toLocaleString()}</div>
+            <div class="stat-subtext">${summary.successRate} success rate</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Failed to Pack</div>
+            <div class="stat-value danger">${summary.failed.toLocaleString()}</div>
+            <div class="stat-subtext">Missing data or no valid box</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Low Efficiency Orders</div>
+            <div class="stat-value warning">${lowEfficiencyCount.toLocaleString()}</div>
+            <div class="stat-subtext">&lt;40% box utilization</div>
+          </div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-header">
+              <div class="chart-title">Fill Efficiency Distribution</div>
+            </div>
+            <div class="chart-container">
+              <canvas id="efficiency-chart"></canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header">
+              <div class="chart-title">Top 10 Box Usage</div>
+            </div>
+            <div class="chart-container">
+              <canvas id="box-usage-chart"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Gap Analysis -->
+        <div class="gap-analysis">
+          <div class="gap-header">
+            <div>
+              <div class="gap-title">Box Inventory Gap Analysis</div>
+              <div class="gap-subtitle">Orders with &lt;40% efficiency grouped by ideal box volume</div>
+            </div>
+          </div>
+          <div class="gap-grid">
+            ${renderGapCards(idealBoxAnalysis)}
+          </div>
+        </div>
+        
+        <!-- Failure Breakdown -->
+        <div class="failures-section">
+          <div class="chart-title">Failure Breakdown</div>
+          <div class="failures-grid">
+            ${renderFailureCards(failureReasons)}
+          </div>
+        </div>
+      `;
+      
+      renderEfficiencyChart(efficiencyDistribution);
+      renderBoxUsageChart(boxUsage);
+    }
+    
+    function renderGapCards(idealBoxAnalysis) {
+      if (!idealBoxAnalysis || idealBoxAnalysis.length === 0) {
+        return '<div class="empty-state-text">No gap data available</div>';
+      }
+      
+      // Find the range with most orders for highlighting
+      const maxOrders = Math.max(...idealBoxAnalysis.map(r => r.orderCount));
+      
+      return idealBoxAnalysis.slice(0, 8).map(range => {
+        const isHighlight = range.orderCount === maxOrders;
+        const topBoxes = Object.entries(range.forcedIntoBoxes)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3);
+        
+        return `
+          <div class="gap-card ${isHighlight ? 'highlight' : ''}">
+            <div class="gap-range">${range.range}</div>
+            <div class="gap-orders">${range.orderCount.toLocaleString()}</div>
+            <div class="gap-orders-label">orders</div>
+            <div class="gap-ideal">Ideal: ~${range.avgIdealVolume} cu.in.</div>
+            <div class="gap-forced">
+              <div class="gap-forced-label">Forced into</div>
+              ${topBoxes.map(([box, count]) => `
+                <div class="gap-forced-item">
+                  <span>${box.replace('Box ', '')}</span>
+                  <span>${count}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function renderFailureCards(failureReasons) {
+      const reasonDescriptions = {
+        'no_valid_items': 'All items in order have missing dimension data',
+        'missing_skus': 'Some items lack dimension data in product catalog',
+        'no_valid_box': 'Items too large for any available box',
+        'packing_failed': 'Algorithm could not fit items (may need multi-box)'
+      };
+      
+      return Object.entries(failureReasons).map(([reason, count]) => `
+        <div class="failure-card">
+          <div class="failure-reason">${reason.replace(/_/g, ' ')}</div>
+          <div class="failure-count">${count.toLocaleString()}</div>
+          <div class="failure-desc">${reasonDescriptions[reason] || ''}</div>
+        </div>
+      `).join('');
+    }
+    
+    function renderEfficiencyChart(distribution) {
+      const ctx = document.getElementById('efficiency-chart').getContext('2d');
+      const labels = Object.keys(distribution);
+      const data = Object.values(distribution);
+      const total = data.reduce((a, b) => a + b, 0);
+      
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: ['#44cc88', '#4a9eff', '#ffd93d', '#ff6b6b'],
+            borderColor: '#12121a',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                color: '#b0b0b0',
+                font: { size: 13 },
+                padding: 14,
+                usePointStyle: true,
+                generateLabels: function(chart) {
+                  const data = chart.data;
+                  return data.labels.map((label, i) => ({
+                    text: `${label}: ${data.datasets[0].data[i].toLocaleString()} (${((data.datasets[0].data[i] / total) * 100).toFixed(1)}%)`,
+                    fillStyle: data.datasets[0].backgroundColor[i],
+                    fontColor: '#b0b0b0',
+                    hidden: false,
+                    index: i,
+                    pointStyle: 'circle'
+                  }));
+                }
+              }
+            }
+          },
+          cutout: '60%'
+        }
+      });
+    }
+    
+    function renderBoxUsageChart(boxUsage) {
+      const ctx = document.getElementById('box-usage-chart').getContext('2d');
+      const entries = Object.entries(boxUsage).slice(0, 10);
+      const labels = entries.map(([name]) => name.replace('Box ', ''));
+      const data = entries.map(([, count]) => count);
+      const maxVal = Math.max(...data);
+      
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: '#4a9eff',
+            borderRadius: 4,
+            barThickness: 20
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: 'y',
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              grid: { color: '#2a2a3a' },
+              ticks: { color: '#999', font: { size: 12 } }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: '#b0b0b0', font: { size: 12 } }
+            }
+          }
+        }
+      });
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', loadSimulationResults);
+  </script>
+</body>
+</html>

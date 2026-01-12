@@ -8,3 +8,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Large data files (sensitive business data)
+SALES_DATA.tsv
+PIM_SKU_DATA.tsv

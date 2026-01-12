@@ -16,10 +16,55 @@
       overflow: hidden;
     }
     
+    /* Top Navigation */
+    .top-nav {
+      background: #12121a;
+      border-bottom: 1px solid #2a2a3a;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      height: 48px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    
+    .nav-brand {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      margin-right: 30px;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .nav-link {
+      padding: 8px 16px;
+      color: #888;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    
+    .nav-link:hover {
+      color: #fff;
+      background: #1a1a25;
+    }
+    
+    .nav-link.active {
+      color: #4a9eff;
+      background: rgba(74, 158, 255, 0.1);
+    }
+    
     .container {
       display: grid;
       grid-template-columns: 280px 1fr 280px;
-      height: 100vh;
+      height: calc(100vh - 48px);
       width: 100vw;
     }
     
@@ -464,6 +509,14 @@
   </style>
 </head>
 <body>
+  <nav class="top-nav">
+    <div class="nav-brand">Cartonization Demo</div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">Visualizer</a>
+      <a href="simulator.html" class="nav-link">Batch Simulator</a>
+    </div>
+  </nav>
+  
   <div class="container">
     <!-- Left Panel: Product Search -->
     <div class="panel-left">
