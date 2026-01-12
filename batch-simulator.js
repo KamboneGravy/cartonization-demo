@@ -1,9 +1,9 @@
 // Batch Cartonization Simulator
 // Analyzes historical orders against current box inventory to find gaps
+// Includes candidate box analysis to identify best new box investments
 
 const fs = require('fs');
 const { BP3D } = require('binpackingjs');
-const { Container, Item: EBAFITItem, PackingService } = require('3d-bin-packing-ts');
 
 const { Item: BPItem, Bin, Packer } = BP3D;
 
@@ -39,16 +39,26 @@ function loadTSV(filepath, keyField = null) {
 
 function loadBoxes(filepath) {
   const data = JSON.parse(fs.readFileSync(filepath, 'utf-8'));
-  // For now, just Texas Art boxes - this is the gap analysis focus
-  return data.texasArt.map(box => ({
+  
+  const processBoxes = (boxes, isCandidate = false) => boxes.map(box => ({
     name: box.name,
     length: box.length,
     width: box.width,
     height: box.height,
     max_weight: box.max_weight,
     box_weight: box.box_weight,
-    volume: box.length * box.width * box.height
-  })).sort((a, b) => a.volume - b.volume);
+    volume: box.length * box.width * box.height,
+    candidate: isCandidate || box.candidate || false
+  }));
+  
+  const currentBoxes = processBoxes(data.texasArt, false);
+  const candidateBoxes = processBoxes(data.candidates || [], true);
+  
+  return {
+    current: currentBoxes.sort((a, b) => a.volume - b.volume),
+    candidates: candidateBoxes.sort((a, b) => a.volume - b.volume),
+    all: [...currentBoxes, ...candidateBoxes].sort((a, b) => a.volume - b.volume)
+  };
 }
 
 function groupOrdersByID(salesRows) {
@@ -71,7 +81,7 @@ function groupOrdersByID(salesRows) {
 }
 
 // ============================================================
-// Packing Logic (simplified from browser-entry.js)
+// Packing Logic
 // ============================================================
 
 function expandItems(items, products) {
@@ -97,7 +107,6 @@ function expandItems(items, products) {
     
     const qty = item.quantity || 1;
     for (let i = 0; i < qty; i++) {
-      // Sort dimensions largest to smallest
       const dims = [length, width, height].sort((a, b) => b - a);
       expanded.push({
         sku: item.sku,
@@ -123,7 +132,6 @@ function calculateTotals(items) {
 function getValidBoxes(items, boxes) {
   const totals = calculateTotals(items);
   
-  // Find minimum dimensions needed (largest item in each dimension)
   const allDims = items.map(i => [i.length, i.width, i.height].sort((a, b) => b - a));
   const minDims = [
     Math.max(...allDims.map(d => d[0])),
@@ -200,7 +208,6 @@ function packOrder(items, boxes, products) {
     };
   }
   
-  // Try each box, smallest first
   for (const box of validBoxes) {
     const result = tryPackFFD(expanded, box);
     if (result.packed === result.total) {
@@ -214,12 +221,11 @@ function packOrder(items, boxes, products) {
         itemsWeight: totals.weight,
         itemCount: expanded.length,
         efficiency: Math.round(efficiency * 10) / 10,
-        idealBoxVolume: totals.volume * 1.3 // rough estimate with some headroom
+        isCandidate: box.candidate || false
       };
     }
   }
   
-  // Couldn't fit in any box
   return {
     success: false,
     reason: 'packing_failed',
@@ -237,19 +243,16 @@ function analyzeResults(results) {
   const successful = results.filter(r => r.success);
   const failed = results.filter(r => !r.success);
   
-  // Failure breakdown
   const failureReasons = {};
   failed.forEach(r => {
     failureReasons[r.reason] = (failureReasons[r.reason] || 0) + 1;
   });
   
-  // Box usage distribution
   const boxUsage = {};
   successful.forEach(r => {
     boxUsage[r.box] = (boxUsage[r.box] || 0) + 1;
   });
   
-  // Efficiency distribution
   const efficiencyBuckets = {
     'excellent (>70%)': 0,
     'good (50-70%)': 0,
@@ -264,7 +267,6 @@ function analyzeResults(results) {
     else efficiencyBuckets['poor (<30%)']++;
   });
   
-  // Low efficiency orders - candidates for box gap analysis
   const lowEfficiencyOrders = successful
     .filter(r => r.efficiency < 40)
     .map(r => ({
@@ -273,11 +275,10 @@ function analyzeResults(results) {
       efficiency: r.efficiency,
       itemsVolume: r.itemsVolume,
       boxVolume: r.boxVolume,
-      idealBoxVolume: r.idealBoxVolume,
+      idealBoxVolume: r.itemsVolume * 1.3,
       itemCount: r.itemCount
     }));
   
-  // Cluster ideal box sizes for low-efficiency orders
   const idealBoxAnalysis = analyzeIdealBoxes(lowEfficiencyOrders);
   
   return {
@@ -300,7 +301,6 @@ function analyzeResults(results) {
 function analyzeIdealBoxes(lowEfficiencyOrders) {
   if (lowEfficiencyOrders.length === 0) return [];
   
-  // Group by volume ranges to identify common gap sizes
   const volumeRanges = [
     { min: 0, max: 100, label: '0-100 cu.in.' },
     { min: 100, max: 200, label: '100-200 cu.in.' },
@@ -313,7 +313,7 @@ function analyzeIdealBoxes(lowEfficiencyOrders) {
     { min: 5000, max: Infinity, label: '5000+ cu.in.' }
   ];
   
-  const rangeAnalysis = volumeRanges.map(range => {
+  return volumeRanges.map(range => {
     const ordersInRange = lowEfficiencyOrders.filter(
       o => o.idealBoxVolume >= range.min && o.idealBoxVolume < range.max
     );
@@ -333,8 +333,64 @@ function analyzeIdealBoxes(lowEfficiencyOrders) {
       forcedIntoBoxes: currentBoxes
     };
   }).filter(Boolean);
+}
+
+function analyzeCandidateImpact(baselineResults, candidateResults, candidateBoxes) {
+  const impact = {};
   
-  return rangeAnalysis;
+  // Initialize candidate tracking
+  candidateBoxes.forEach(box => {
+    impact[box.name] = {
+      name: box.name,
+      volume: box.volume,
+      dims: `${box.length}x${box.width}x${box.height}`,
+      ordersCaptured: 0,
+      previousBoxes: {},
+      efficiencyBefore: [],
+      efficiencyAfter: []
+    };
+  });
+  
+  // Compare each order
+  baselineResults.forEach((baseline, i) => {
+    const withCandidate = candidateResults[i];
+    
+    // Skip if either failed or no change
+    if (!baseline.success || !withCandidate.success) return;
+    if (baseline.box === withCandidate.box) return;
+    
+    // Check if the new box is a candidate
+    if (withCandidate.isCandidate && impact[withCandidate.box]) {
+      const candidate = impact[withCandidate.box];
+      candidate.ordersCaptured++;
+      candidate.previousBoxes[baseline.box] = (candidate.previousBoxes[baseline.box] || 0) + 1;
+      candidate.efficiencyBefore.push(baseline.efficiency);
+      candidate.efficiencyAfter.push(withCandidate.efficiency);
+    }
+  });
+  
+  // Calculate averages and sort by impact
+  const results = Object.values(impact)
+    .map(c => ({
+      ...c,
+      avgEfficiencyBefore: c.efficiencyBefore.length > 0 
+        ? Math.round(c.efficiencyBefore.reduce((a, b) => a + b, 0) / c.efficiencyBefore.length * 10) / 10
+        : 0,
+      avgEfficiencyAfter: c.efficiencyAfter.length > 0
+        ? Math.round(c.efficiencyAfter.reduce((a, b) => a + b, 0) / c.efficiencyAfter.length * 10) / 10
+        : 0
+    }))
+    .filter(c => c.ordersCaptured > 0)
+    .sort((a, b) => b.ordersCaptured - a.ordersCaptured);
+  
+  // Calculate cumulative impact for diminishing returns
+  let cumulative = 0;
+  results.forEach(r => {
+    cumulative += r.ordersCaptured;
+    r.cumulativeOrders = cumulative;
+  });
+  
+  return results;
 }
 
 // ============================================================
@@ -355,85 +411,128 @@ async function main() {
   console.log(`  Unique orders: ${orderList.length}`);
   
   const boxes = loadBoxes('./boxes.json');
-  console.log(`  Boxes loaded: ${boxes.length}`);
+  console.log(`  Current boxes: ${boxes.current.length}`);
+  console.log(`  Candidate boxes: ${boxes.candidates.length}`);
   console.log('');
   
-  console.log('Running simulation...');
-  const startTime = Date.now();
+  // ========== BASELINE SIMULATION ==========
+  console.log('Running baseline simulation (current boxes only)...');
+  const baselineStart = Date.now();
   
-  const results = [];
+  const baselineResults = [];
   let processed = 0;
   
   for (const order of orderList) {
-    const result = packOrder(order.items, boxes, products);
+    const result = packOrder(order.items, boxes.current, products);
     result.orderId = order.orderId;
     result.destinationZip = order.destinationZip;
-    results.push(result);
+    baselineResults.push(result);
     
     processed++;
-    if (processed % 5000 === 0) {
+    if (processed % 10000 === 0) {
       console.log(`  Processed ${processed} / ${orderList.length} orders...`);
     }
   }
   
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`  Completed in ${elapsed}s`);
+  const baselineElapsed = ((Date.now() - baselineStart) / 1000).toFixed(1);
+  console.log(`  Baseline completed in ${baselineElapsed}s`);
   console.log('');
   
-  console.log('Analyzing results...');
-  const analysis = analyzeResults(results);
+  // ========== CANDIDATE SIMULATION ==========
+  console.log('Running candidate simulation (current + candidate boxes)...');
+  const candidateStart = Date.now();
   
-  // Output
+  const candidateResults = [];
+  processed = 0;
+  
+  for (const order of orderList) {
+    const result = packOrder(order.items, boxes.all, products);
+    result.orderId = order.orderId;
+    result.destinationZip = order.destinationZip;
+    candidateResults.push(result);
+    
+    processed++;
+    if (processed % 10000 === 0) {
+      console.log(`  Processed ${processed} / ${orderList.length} orders...`);
+    }
+  }
+  
+  const candidateElapsed = ((Date.now() - candidateStart) / 1000).toFixed(1);
+  console.log(`  Candidate simulation completed in ${candidateElapsed}s`);
+  console.log('');
+  
+  // ========== ANALYSIS ==========
+  console.log('Analyzing results...');
+  
+  const baselineAnalysis = analyzeResults(baselineResults);
+  const candidateAnalysis = analyzeResults(candidateResults);
+  const candidateImpact = analyzeCandidateImpact(baselineResults, candidateResults, boxes.candidates);
+  
+  // ========== OUTPUT ==========
   console.log('\n' + '='.repeat(60));
   console.log('BATCH SIMULATION RESULTS');
   console.log('='.repeat(60));
   
-  console.log('\n--- Summary ---');
-  console.log(`Total orders:    ${analysis.summary.totalOrders}`);
-  console.log(`Successful:      ${analysis.summary.successful}`);
-  console.log(`Failed:          ${analysis.summary.failed}`);
-  console.log(`Success rate:    ${analysis.summary.successRate}`);
+  console.log('\n--- Baseline Summary (Current Boxes) ---');
+  console.log(`Total orders:    ${baselineAnalysis.summary.totalOrders}`);
+  console.log(`Successful:      ${baselineAnalysis.summary.successful}`);
+  console.log(`Failed:          ${baselineAnalysis.summary.failed}`);
+  console.log(`Success rate:    ${baselineAnalysis.summary.successRate}`);
   
-  console.log('\n--- Failure Reasons ---');
-  Object.entries(analysis.failureReasons).forEach(([reason, count]) => {
-    console.log(`  ${reason}: ${count}`);
-  });
-  
-  console.log('\n--- Box Usage (Top 10) ---');
-  Object.entries(analysis.boxUsage).slice(0, 10).forEach(([box, count]) => {
-    const pct = ((count / analysis.summary.successful) * 100).toFixed(1);
-    console.log(`  ${box}: ${count} (${pct}%)`);
-  });
-  
-  console.log('\n--- Fill Efficiency Distribution ---');
-  Object.entries(analysis.efficiencyDistribution).forEach(([bucket, count]) => {
-    const pct = ((count / analysis.summary.successful) * 100).toFixed(1);
+  console.log('\n--- Efficiency Distribution (Baseline) ---');
+  Object.entries(baselineAnalysis.efficiencyDistribution).forEach(([bucket, count]) => {
+    const pct = ((count / baselineAnalysis.summary.successful) * 100).toFixed(1);
     console.log(`  ${bucket}: ${count} (${pct}%)`);
   });
   
-  console.log('\n--- Box Gap Analysis ---');
-  console.log(`Orders with <40% fill efficiency: ${analysis.lowEfficiencyCount}`);
-  console.log('\nIdeal box volume ranges for low-efficiency orders:');
-  analysis.idealBoxAnalysis.forEach(range => {
-    console.log(`\n  ${range.range}: ${range.orderCount} orders`);
-    console.log(`    Avg ideal volume: ~${range.avgIdealVolume} cu.in.`);
-    console.log('    Currently forced into:');
-    Object.entries(range.forcedIntoBoxes).forEach(([box, count]) => {
-      console.log(`      - ${box}: ${count}`);
-    });
-  });
+  console.log('\n--- With Candidate Boxes ---');
+  console.log(`Poor efficiency orders: ${baselineAnalysis.efficiencyDistribution['poor (<30%)']} → ${candidateAnalysis.efficiencyDistribution['poor (<30%)']}`);
   
-  // Save detailed results
+  console.log('\n' + '='.repeat(60));
+  console.log('CANDIDATE BOX ANALYSIS');
+  console.log('='.repeat(60));
+  
+  if (candidateImpact.length === 0) {
+    console.log('\nNo candidate boxes captured any orders.');
+  } else {
+    console.log('\nRanked by orders captured:\n');
+    console.log('Box              Volume   Orders    Efficiency        Cumulative');
+    console.log('                         Captured  Before → After    Orders');
+    console.log('-'.repeat(70));
+    
+    candidateImpact.forEach((c, i) => {
+      const boxName = c.dims.padEnd(12);
+      const volume = c.volume.toString().padEnd(8);
+      const captured = c.ordersCaptured.toString().padEnd(9);
+      const effChange = `${c.avgEfficiencyBefore}% → ${c.avgEfficiencyAfter}%`.padEnd(17);
+      const cumulative = c.cumulativeOrders.toString();
+      console.log(`${boxName} ${volume} ${captured} ${effChange} ${cumulative}`);
+    });
+    
+    console.log('\n--- Recommendation ---');
+    const top3 = candidateImpact.slice(0, 3);
+    const totalCaptured = top3.reduce((sum, c) => sum + c.ordersCaptured, 0);
+    console.log(`Adding ${top3.map(c => c.dims).join(', ')} would improve ${totalCaptured} orders`);
+  }
+  
+  // Save results
   const outputPath = './simulation_results.json';
   fs.writeFileSync(outputPath, JSON.stringify({
-    analysis,
+    analysis: baselineAnalysis,
+    candidateAnalysis: {
+      summary: candidateAnalysis.summary,
+      efficiencyDistribution: candidateAnalysis.efficiencyDistribution,
+      boxUsage: candidateAnalysis.boxUsage
+    },
+    candidateImpact,
     timestamp: new Date().toISOString(),
     config: {
       boxInventory: 'texasArt only',
-      algorithm: 'FFD'
+      algorithm: 'FFD',
+      candidateBoxes: boxes.candidates.map(b => b.name)
     }
   }, null, 2));
-  console.log(`\nDetailed results saved to: ${outputPath}`);
+  console.log(`\nResults saved to: ${outputPath}`);
 }
 
 main().catch(console.error);

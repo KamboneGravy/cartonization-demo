@@ -29,7 +29,7 @@
     }
     
     .nav-brand {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       color: #fff;
       margin-right: 30px;
@@ -42,9 +42,9 @@
     
     .nav-link {
       padding: 8px 16px;
-      color: #999;
+      color: #888;
       text-decoration: none;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 500;
       border-radius: 4px;
       transition: all 0.15s;
@@ -79,8 +79,8 @@
     }
     
     .page-subtitle {
-      font-size: 15px;
-      color: #999;
+      font-size: 13px;
+      color: #666;
     }
     
     /* Data Source Section */
@@ -100,21 +100,21 @@
     }
     
     .data-source-label {
-      font-size: 12px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 1px;
-      color: #888;
+      color: #666;
       margin-bottom: 4px;
     }
     
     .data-source-value {
-      font-size: 14px;
+      font-size: 13px;
       color: #fff;
     }
     
     .data-source-meta {
-      font-size: 13px;
-      color: #888;
+      font-size: 11px;
+      color: #666;
       margin-top: 2px;
     }
     
@@ -123,8 +123,8 @@
       background: #1a1a25;
       border: 1px solid #2a2a3a;
       border-radius: 4px;
-      color: #999;
-      font-size: 13px;
+      color: #888;
+      font-size: 12px;
       cursor: pointer;
       transition: all 0.15s;
     }
@@ -161,10 +161,10 @@
     }
     
     .stat-label {
-      font-size: 12px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 1px;
-      color: #888;
+      color: #666;
       margin-bottom: 8px;
     }
     
@@ -179,8 +179,8 @@
     .stat-value.danger { color: #ff6b6b; }
     
     .stat-subtext {
-      font-size: 13px;
-      color: #888;
+      font-size: 11px;
+      color: #666;
       margin-top: 4px;
     }
     
@@ -199,6 +199,10 @@
       padding: 16px;
     }
     
+    .chart-card.full-width {
+      grid-column: 1 / -1;
+    }
+    
     .chart-header {
       display: flex;
       justify-content: space-between;
@@ -207,7 +211,7 @@
     }
     
     .chart-title {
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 600;
       color: #fff;
     }
@@ -215,6 +219,152 @@
     .chart-container {
       position: relative;
       height: 250px;
+    }
+    
+    .chart-container.tall {
+      height: 350px;
+    }
+    
+    /* Candidate Box Analysis */
+    .candidate-section {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .candidate-section.highlight {
+      border-color: #44cc88;
+      background: linear-gradient(135deg, rgba(68, 204, 136, 0.05) 0%, #12121a 100%);
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .section-subtitle {
+      font-size: 11px;
+      color: #666;
+      margin-top: 4px;
+    }
+    
+    .recommendation-badge {
+      background: rgba(68, 204, 136, 0.15);
+      border: 1px solid #44cc88;
+      color: #44cc88;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    /* Candidate Table */
+    .candidate-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 12px;
+    }
+    
+    .candidate-table th {
+      text-align: left;
+      padding: 10px 12px;
+      color: #666;
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #2a2a3a;
+      background: #0d0d12;
+    }
+    
+    .candidate-table td {
+      padding: 12px;
+      border-bottom: 1px solid #1a1a25;
+      vertical-align: middle;
+    }
+    
+    .candidate-table tr:hover {
+      background: #1a1a25;
+    }
+    
+    .candidate-table tr.top-pick {
+      background: rgba(68, 204, 136, 0.08);
+    }
+    
+    .candidate-table tr.top-pick td {
+      border-bottom-color: rgba(68, 204, 136, 0.2);
+    }
+    
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .rank-badge.gold { background: rgba(255, 217, 61, 0.2); color: #ffd93d; }
+    .rank-badge.silver { background: rgba(192, 192, 192, 0.2); color: #c0c0c0; }
+    .rank-badge.bronze { background: rgba(205, 127, 50, 0.2); color: #cd7f32; }
+    .rank-badge.normal { background: #1a1a25; color: #666; }
+    
+    .box-name {
+      font-weight: 600;
+      color: #fff;
+    }
+    
+    .box-volume {
+      color: #666;
+      font-size: 10px;
+    }
+    
+    .efficiency-change {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .efficiency-before {
+      color: #ff6b6b;
+    }
+    
+    .efficiency-arrow {
+      color: #44cc88;
+    }
+    
+    .efficiency-after {
+      color: #44cc88;
+      font-weight: 600;
+    }
+    
+    .previous-box-list {
+      font-size: 10px;
+      color: #666;
+    }
+    
+    .previous-box-item {
+      display: inline-block;
+      background: #1a1a25;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin: 2px;
     }
     
     /* Gap Analysis Section */
@@ -234,15 +384,14 @@
     }
     
     .gap-title {
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 600;
       color: #fff;
     }
     
     .gap-subtitle {
-      font-size: 13px;
-      color: #888;
-      margin-top: 4px;
+      font-size: 11px;
+      color: #666;
     }
     
     .gap-grid {
@@ -264,26 +413,26 @@
     }
     
     .gap-range {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 600;
       color: #4a9eff;
       margin-bottom: 8px;
     }
     
     .gap-orders {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 600;
       color: #fff;
     }
     
     .gap-orders-label {
-      font-size: 12px;
-      color: #888;
+      font-size: 10px;
+      color: #666;
     }
     
     .gap-ideal {
-      font-size: 12px;
-      color: #999;
+      font-size: 10px;
+      color: #888;
       margin-top: 8px;
     }
     
@@ -294,15 +443,15 @@
     }
     
     .gap-forced-label {
-      font-size: 11px;
+      font-size: 9px;
       text-transform: uppercase;
-      color: #888;
+      color: #666;
       margin-bottom: 4px;
     }
     
     .gap-forced-item {
-      font-size: 12px;
-      color: #999;
+      font-size: 10px;
+      color: #888;
       display: flex;
       justify-content: space-between;
       padding: 2px 0;
@@ -330,62 +479,21 @@
     }
     
     .failure-reason {
-      font-size: 13px;
-      color: #999;
+      font-size: 11px;
+      color: #888;
       margin-bottom: 4px;
     }
     
     .failure-count {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 600;
       color: #ff6b6b;
     }
     
     .failure-desc {
-      font-size: 12px;
-      color: #777;
+      font-size: 9px;
+      color: #555;
       margin-top: 4px;
-    }
-    
-    /* Box Usage Table */
-    .box-usage-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    
-    .box-usage-table th {
-      text-align: left;
-      padding: 8px;
-      color: #888;
-      font-weight: 500;
-      text-transform: uppercase;
-      font-size: 11px;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid #2a2a3a;
-    }
-    
-    .box-usage-table td {
-      padding: 8px;
-      border-bottom: 1px solid #1a1a25;
-    }
-    
-    .box-usage-table tr:hover {
-      background: #1a1a25;
-    }
-    
-    .usage-bar {
-      height: 6px;
-      background: #2a2a3a;
-      border-radius: 3px;
-      overflow: hidden;
-      min-width: 100px;
-    }
-    
-    .usage-bar-fill {
-      height: 100%;
-      background: #4a9eff;
-      border-radius: 3px;
     }
     
     /* Loading State */
@@ -395,8 +503,7 @@
       align-items: center;
       justify-content: center;
       padding: 60px;
-      color: #888;
-      font-size: 14px;
+      color: #666;
     }
     
     .loading-spinner {
@@ -417,17 +524,23 @@
     .empty-state {
       text-align: center;
       padding: 60px;
-      color: #888;
+      color: #666;
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
     }
     
     .empty-state-title {
-      font-size: 18px;
-      color: #999;
+      font-size: 16px;
+      color: #888;
       margin-bottom: 8px;
     }
     
     .empty-state-text {
-      font-size: 14px;
+      font-size: 12px;
       margin-bottom: 20px;
     }
     
@@ -493,9 +606,10 @@
     function renderEmptyState() {
       document.getElementById('app-content').innerHTML = `
         <div class="empty-state">
+          <div class="empty-state-icon">📦</div>
           <div class="empty-state-title">No Simulation Results</div>
           <div class="empty-state-text">Run the batch simulator to analyze your historical orders.</div>
-          <code style="background: #1a1a25; padding: 12px 16px; border-radius: 4px; font-size: 13px; color: #999;">
+          <code style="background: #1a1a25; padding: 12px 16px; border-radius: 4px; font-size: 12px; color: #888;">
             node batch-simulator.js
           </code>
         </div>
@@ -503,8 +617,11 @@
     }
     
     function renderDashboard() {
-      const { analysis, timestamp, config } = simulationData;
+      const { analysis, candidateAnalysis, candidateImpact, timestamp, config } = simulationData;
       const { summary, failureReasons, boxUsage, efficiencyDistribution, lowEfficiencyCount, idealBoxAnalysis } = analysis;
+      
+      // Check if we have candidate data
+      const hasCandidateData = candidateImpact && candidateImpact.length > 0;
       
       document.getElementById('app-content').innerHTML = `
         <!-- Data Source -->
@@ -512,7 +629,7 @@
           <div class="data-source-info">
             <div class="data-source-label">Simulation Run</div>
             <div class="data-source-value">${new Date(timestamp).toLocaleString()}</div>
-            <div class="data-source-meta">Algorithm: ${config.algorithm} | Box Inventory: ${config.boxInventory}</div>
+            <div class="data-source-meta">Algorithm: ${config.algorithm} | Box Inventory: ${config.boxInventory}${config.candidateBoxes ? ` | Candidates tested: ${config.candidateBoxes.length}` : ''}</div>
           </div>
           <button class="btn" onclick="location.reload()">Refresh</button>
         </div>
@@ -541,6 +658,8 @@
           </div>
         </div>
         
+        ${hasCandidateData ? renderCandidateAnalysis(candidateImpact, candidateAnalysis, analysis) : ''}
+        
         <!-- Charts -->
         <div class="charts-grid">
           <div class="chart-card">
@@ -559,13 +678,23 @@
               <canvas id="box-usage-chart"></canvas>
             </div>
           </div>
+          ${hasCandidateData ? `
+          <div class="chart-card full-width">
+            <div class="chart-header">
+              <div class="chart-title">Diminishing Returns: Cumulative Orders Improved by Adding Boxes</div>
+            </div>
+            <div class="chart-container tall">
+              <canvas id="diminishing-returns-chart"></canvas>
+            </div>
+          </div>
+          ` : ''}
         </div>
         
         <!-- Gap Analysis -->
         <div class="gap-analysis">
           <div class="gap-header">
             <div>
-              <div class="gap-title">Box Inventory Gap Analysis</div>
+              <div class="gap-title">📊 Box Inventory Gap Analysis</div>
               <div class="gap-subtitle">Orders with &lt;40% efficiency grouped by ideal box volume</div>
             </div>
           </div>
@@ -585,6 +714,112 @@
       
       renderEfficiencyChart(efficiencyDistribution);
       renderBoxUsageChart(boxUsage);
+      
+      if (hasCandidateData) {
+        renderDiminishingReturnsChart(candidateImpact);
+      }
+    }
+    
+    function renderCandidateAnalysis(candidateImpact, candidateAnalysis, baselineAnalysis) {
+      const totalCaptured = candidateImpact.reduce((sum, c) => sum + c.ordersCaptured, 0);
+      const top3 = candidateImpact.slice(0, 3);
+      const top3Captured = top3.reduce((sum, c) => sum + c.ordersCaptured, 0);
+      
+      const baselinePoor = baselineAnalysis.efficiencyDistribution['poor (<30%)'];
+      const candidatePoor = candidateAnalysis.efficiencyDistribution['poor (<30%)'];
+      const poorReduction = baselinePoor - candidatePoor;
+      
+      return `
+        <div class="candidate-section highlight">
+          <div class="section-header">
+            <div>
+              <div class="section-title">
+                📦 Candidate Box Analysis
+              </div>
+              <div class="section-subtitle">
+                Testing ${simulationData.config.candidateBoxes?.length || 0} smaller box sizes against historical orders
+              </div>
+            </div>
+            <div class="recommendation-badge">
+              ${top3.map(c => c.dims).join(' + ')} recommended
+            </div>
+          </div>
+          
+          <div class="dashboard-grid" style="margin-bottom: 16px;">
+            <div class="stat-card">
+              <div class="stat-label">Orders Improved</div>
+              <div class="stat-value success">${totalCaptured.toLocaleString()}</div>
+              <div class="stat-subtext">Would use smaller boxes</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Top 3 Boxes Capture</div>
+              <div class="stat-value success">${top3Captured.toLocaleString()}</div>
+              <div class="stat-subtext">${((top3Captured / totalCaptured) * 100).toFixed(0)}% of total opportunity</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Poor Efficiency Reduction</div>
+              <div class="stat-value success">${poorReduction.toLocaleString()}</div>
+              <div class="stat-subtext">${baselinePoor.toLocaleString()} → ${candidatePoor.toLocaleString()}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Candidate Boxes Tested</div>
+              <div class="stat-value">${simulationData.config.candidateBoxes?.length || 0}</div>
+              <div class="stat-subtext">Standard small box sizes</div>
+            </div>
+          </div>
+          
+          <table class="candidate-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Box Size</th>
+                <th>Volume</th>
+                <th>Orders Captured</th>
+                <th>Efficiency Change</th>
+                <th>Previously Used</th>
+                <th>Cumulative</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${candidateImpact.map((c, i) => {
+                const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
+                const isTop = i < 3;
+                const topPrevBoxes = Object.entries(c.previousBoxes)
+                  .sort((a, b) => b[1] - a[1])
+                  .slice(0, 2);
+                
+                return `
+                  <tr class="${isTop ? 'top-pick' : ''}">
+                    <td><span class="rank-badge ${rankClass}">${i + 1}</span></td>
+                    <td>
+                      <div class="box-name">${c.dims}</div>
+                    </td>
+                    <td>
+                      <span class="box-volume">${c.volume} cu.in.</span>
+                    </td>
+                    <td><strong>${c.ordersCaptured.toLocaleString()}</strong></td>
+                    <td>
+                      <div class="efficiency-change">
+                        <span class="efficiency-before">${c.avgEfficiencyBefore}%</span>
+                        <span class="efficiency-arrow">→</span>
+                        <span class="efficiency-after">${c.avgEfficiencyAfter}%</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="previous-box-list">
+                        ${topPrevBoxes.map(([box, count]) => 
+                          `<span class="previous-box-item">${box.replace('Box ', '')}: ${count}</span>`
+                        ).join('')}
+                      </div>
+                    </td>
+                    <td>${c.cumulativeOrders.toLocaleString()}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
     }
     
     function renderGapCards(idealBoxAnalysis) {
@@ -592,7 +827,6 @@
         return '<div class="empty-state-text">No gap data available</div>';
       }
       
-      // Find the range with most orders for highlighting
       const maxOrders = Math.max(...idealBoxAnalysis.map(r => r.orderCount));
       
       return idealBoxAnalysis.slice(0, 8).map(range => {
@@ -601,7 +835,6 @@
           .sort((a, b) => b[1] - a[1])
           .slice(0, 3)
           .map(([box, count]) => {
-            // Calculate volume from box name (e.g., "Box 7x5x5")
             const dims = box.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/);
             const volume = dims ? Math.round(parseFloat(dims[1]) * parseFloat(dims[2]) * parseFloat(dims[3])) : null;
             return [box, count, volume];
@@ -668,16 +901,15 @@
             legend: {
               position: 'right',
               labels: {
-                color: '#b0b0b0',
-                font: { size: 13 },
-                padding: 14,
+                color: '#888',
+                font: { size: 11 },
+                padding: 12,
                 usePointStyle: true,
                 generateLabels: function(chart) {
                   const data = chart.data;
                   return data.labels.map((label, i) => ({
                     text: `${label}: ${data.datasets[0].data[i].toLocaleString()} (${((data.datasets[0].data[i] / total) * 100).toFixed(1)}%)`,
                     fillStyle: data.datasets[0].backgroundColor[i],
-                    fontColor: '#b0b0b0',
                     hidden: false,
                     index: i,
                     pointStyle: 'circle'
@@ -696,7 +928,6 @@
       const entries = Object.entries(boxUsage).slice(0, 10);
       const labels = entries.map(([name]) => name.replace('Box ', ''));
       const data = entries.map(([, count]) => count);
-      const maxVal = Math.max(...data);
       
       new Chart(ctx, {
         type: 'bar',
@@ -719,11 +950,89 @@
           scales: {
             x: {
               grid: { color: '#2a2a3a' },
-              ticks: { color: '#999', font: { size: 12 } }
+              ticks: { color: '#666', font: { size: 10 } }
             },
             y: {
               grid: { display: false },
-              ticks: { color: '#b0b0b0', font: { size: 12 } }
+              ticks: { color: '#888', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+    
+    function renderDiminishingReturnsChart(candidateImpact) {
+      const ctx = document.getElementById('diminishing-returns-chart').getContext('2d');
+      
+      const labels = candidateImpact.map(c => c.dims);
+      const cumulativeData = candidateImpact.map(c => c.cumulativeOrders);
+      const individualData = candidateImpact.map(c => c.ordersCaptured);
+      
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Orders Captured (this box)',
+              data: individualData,
+              backgroundColor: '#4a9eff',
+              borderRadius: 4,
+              order: 2
+            },
+            {
+              label: 'Cumulative Orders Improved',
+              data: cumulativeData,
+              type: 'line',
+              borderColor: '#44cc88',
+              backgroundColor: 'rgba(68, 204, 136, 0.1)',
+              fill: true,
+              tension: 0.3,
+              pointBackgroundColor: '#44cc88',
+              pointRadius: 4,
+              order: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: '#888',
+                font: { size: 11 },
+                usePointStyle: true
+              }
+            },
+            tooltip: {
+              callbacks: {
+                afterBody: function(context) {
+                  const idx = context[0].dataIndex;
+                  const candidate = candidateImpact[idx];
+                  return `\nEfficiency: ${candidate.avgEfficiencyBefore}% → ${candidate.avgEfficiencyAfter}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: '#2a2a3a' },
+              ticks: { color: '#888', font: { size: 11 } }
+            },
+            y: {
+              grid: { color: '#2a2a3a' },
+              ticks: { 
+                color: '#888', 
+                font: { size: 11 },
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
             }
           }
         }
