@@ -599,7 +599,13 @@
         const isHighlight = range.orderCount === maxOrders;
         const topBoxes = Object.entries(range.forcedIntoBoxes)
           .sort((a, b) => b[1] - a[1])
-          .slice(0, 3);
+          .slice(0, 3)
+          .map(([box, count]) => {
+            // Calculate volume from box name (e.g., "Box 7x5x5")
+            const dims = box.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/);
+            const volume = dims ? Math.round(parseFloat(dims[1]) * parseFloat(dims[2]) * parseFloat(dims[3])) : null;
+            return [box, count, volume];
+          });
         
         return `
           <div class="gap-card ${isHighlight ? 'highlight' : ''}">
@@ -609,10 +615,10 @@
             <div class="gap-ideal">Ideal: ~${range.avgIdealVolume} cu.in.</div>
             <div class="gap-forced">
               <div class="gap-forced-label">Forced into</div>
-              ${topBoxes.map(([box, count]) => `
+              ${topBoxes.map(([box, count, volume]) => `
                 <div class="gap-forced-item">
-                  <span>${box.replace('Box ', '')}</span>
-                  <span>${count}</span>
+                  <span>${box.replace('Box ', '')}${volume ? ` (${volume})` : ''}</span>
+                  <span>${count.toLocaleString()}</span>
                 </div>
               `).join('')}
             </div>
