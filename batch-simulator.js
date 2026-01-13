@@ -1,9 +1,15 @@
-// Batch Cartonization Simulator
-// Analyzes historical orders against current box inventory to find gaps
-// Includes candidate box analysis to identify best new box investments
+// Batch Cartonization Simulator v2
+// ================================
+// Features:
+// 1. Texas Art boxes + Candidate boxes + USPS Flat Rate boxes
+// 2. Algorithm comparison (FFD vs EB-AFIT)
+// 3. Prepares data for rate lookups
+//
+// Run: node batch-simulator.js
 
 const fs = require('fs');
 const { BP3D } = require('binpackingjs');
+const { Container, Item: EBAFITItem, PackingService } = require('3d-bin-packing-ts');
 
 const { Item: BPItem, Bin, Packer } = BP3D;
 
@@ -40,24 +46,33 @@ function loadTSV(filepath, keyField = null) {
 function loadBoxes(filepath) {
   const data = JSON.parse(fs.readFileSync(filepath, 'utf-8'));
   
-  const processBoxes = (boxes, isCandidate = false) => boxes.map(box => ({
+  const processBoxes = (boxes, category) => boxes.map(box => ({
     name: box.name,
     length: box.length,
     width: box.width,
     height: box.height,
     max_weight: box.max_weight,
-    box_weight: box.box_weight,
+    box_weight: box.box_weight || 0,
     volume: box.length * box.width * box.height,
-    candidate: isCandidate || box.candidate || false
+    category: category,
+    candidate: box.candidate || false,
+    flatRate: box.flat_rate || false,
+    carrier: box.carrier || null
   }));
   
-  const currentBoxes = processBoxes(data.texasArt, false);
-  const candidateBoxes = processBoxes(data.candidates || [], true);
+  const texasArt = processBoxes(data.texasArt || [], 'texasArt');
+  const candidates = processBoxes(data.candidates || [], 'candidate');
+  const usps = processBoxes(data.usps || [], 'usps');
   
   return {
-    current: currentBoxes.sort((a, b) => a.volume - b.volume),
-    candidates: candidateBoxes.sort((a, b) => a.volume - b.volume),
-    all: [...currentBoxes, ...candidateBoxes].sort((a, b) => a.volume - b.volume)
+    texasArt: texasArt.sort((a, b) => a.volume - b.volume),
+    candidates: candidates.sort((a, b) => a.volume - b.volume),
+    usps: usps.sort((a, b) => a.volume - b.volume),
+    // Combined sets for different simulation scenarios
+    current: texasArt.sort((a, b) => a.volume - b.volume),
+    withCandidates: [...texasArt, ...candidates].sort((a, b) => a.volume - b.volume),
+    withUSPS: [...texasArt, ...usps].sort((a, b) => a.volume - b.volume),
+    all: [...texasArt, ...candidates, ...usps].sort((a, b) => a.volume - b.volume)
   };
 }
 
@@ -81,7 +96,7 @@ function groupOrdersByID(salesRows) {
 }
 
 // ============================================================
-// Packing Logic
+// Item Processing
 // ============================================================
 
 function expandItems(items, products) {
@@ -113,7 +128,8 @@ function expandItems(items, products) {
         length: dims[0],
         width: dims[1],
         height: dims[2],
-        weight: weight
+        weight: weight,
+        originalIndex: expanded.length
       });
     }
   });
@@ -149,6 +165,10 @@ function getValidBoxes(items, boxes) {
   });
 }
 
+// ============================================================
+// Packing Algorithms
+// ============================================================
+
 function tryPackFFD(items, box) {
   const packer = new Packer();
   packer.addBin(new Bin('box', box.length, box.height, box.width, box.max_weight || 1000));
@@ -159,7 +179,7 @@ function tryPackFFD(items, box) {
   
   sorted.forEach((item, i) => {
     packer.addItem(new BPItem(
-      `item_${i}`,
+      `item_${item.originalIndex}`,
       item.length,
       item.height,
       item.width,
@@ -177,7 +197,33 @@ function tryPackFFD(items, box) {
   return { packed: packedBin.items.length, total: items.length };
 }
 
-function packOrder(items, boxes, products) {
+function tryPackEBAFIT(items, box) {
+  try {
+    const container = new Container('box', box.length, box.width, box.height);
+    
+    const ebafitItems = items.map((item, i) => 
+      new EBAFITItem(`item_${item.originalIndex}`, item.length, item.width, item.height, 1)
+    );
+    
+    const result = PackingService.packSingle(container, ebafitItems);
+    const packResult = result.algorithmPackingResults[0];
+    
+    if (!packResult) {
+      return { packed: 0, total: items.length };
+    }
+    
+    return { packed: packResult.packedItems.length, total: items.length };
+  } catch (e) {
+    // EB-AFIT can throw on edge cases
+    return { packed: 0, total: items.length };
+  }
+}
+
+// ============================================================
+// Order Packing (Single Algorithm)
+// ============================================================
+
+function packOrderWithAlgorithm(items, boxes, products, algorithm = 'ffd') {
   const { expanded, skipped } = expandItems(items, products);
   
   if (expanded.length === 0) {
@@ -208,8 +254,10 @@ function packOrder(items, boxes, products) {
     };
   }
   
+  const tryPack = algorithm === 'ebafit' ? tryPackEBAFIT : tryPackFFD;
+  
   for (const box of validBoxes) {
-    const result = tryPackFFD(expanded, box);
+    const result = tryPack(expanded, box);
     if (result.packed === result.total) {
       const efficiency = (totals.volume / box.volume) * 100;
       return {
@@ -221,7 +269,9 @@ function packOrder(items, boxes, products) {
         itemsWeight: totals.weight,
         itemCount: expanded.length,
         efficiency: Math.round(efficiency * 10) / 10,
-        isCandidate: box.candidate || false
+        category: box.category,
+        flatRate: box.flatRate,
+        carrier: box.carrier
       };
     }
   }
@@ -236,10 +286,10 @@ function packOrder(items, boxes, products) {
 }
 
 // ============================================================
-// Analysis
+// Analysis Functions
 // ============================================================
 
-function analyzeResults(results) {
+function analyzeResults(results, label = '') {
   const successful = results.filter(r => r.success);
   const failed = results.filter(r => !r.success);
   
@@ -267,6 +317,14 @@ function analyzeResults(results) {
     else efficiencyBuckets['poor (<30%)']++;
   });
   
+  // USPS Flat Rate analysis
+  const flatRateUsage = {};
+  successful.forEach(r => {
+    if (r.flatRate) {
+      flatRateUsage[r.box] = (flatRateUsage[r.box] || 0) + 1;
+    }
+  });
+  
   const lowEfficiencyOrders = successful
     .filter(r => r.efficiency < 40)
     .map(r => ({
@@ -282,6 +340,7 @@ function analyzeResults(results) {
   const idealBoxAnalysis = analyzeIdealBoxes(lowEfficiencyOrders);
   
   return {
+    label,
     summary: {
       totalOrders: results.length,
       successful: successful.length,
@@ -292,6 +351,7 @@ function analyzeResults(results) {
     boxUsage: Object.entries(boxUsage)
       .sort((a, b) => b[1] - a[1])
       .reduce((obj, [k, v]) => { obj[k] = v; return obj; }, {}),
+    flatRateUsage,
     efficiencyDistribution: efficiencyBuckets,
     lowEfficiencyCount: lowEfficiencyOrders.length,
     idealBoxAnalysis
@@ -338,7 +398,6 @@ function analyzeIdealBoxes(lowEfficiencyOrders) {
 function analyzeCandidateImpact(baselineResults, candidateResults, candidateBoxes) {
   const impact = {};
   
-  // Initialize candidate tracking
   candidateBoxes.forEach(box => {
     impact[box.name] = {
       name: box.name,
@@ -351,16 +410,15 @@ function analyzeCandidateImpact(baselineResults, candidateResults, candidateBoxe
     };
   });
   
-  // Compare each order
   baselineResults.forEach((baseline, i) => {
     const withCandidate = candidateResults[i];
     
-    // Skip if either failed or no change
     if (!baseline.success || !withCandidate.success) return;
     if (baseline.box === withCandidate.box) return;
     
-    // Check if the new box is a candidate
-    if (withCandidate.isCandidate && impact[withCandidate.box]) {
+    // Check if new box is a candidate
+    const candidateBox = candidateBoxes.find(b => b.name === withCandidate.box);
+    if (candidateBox && impact[withCandidate.box]) {
       const candidate = impact[withCandidate.box];
       candidate.ordersCaptured++;
       candidate.previousBoxes[baseline.box] = (candidate.previousBoxes[baseline.box] || 0) + 1;
@@ -369,7 +427,6 @@ function analyzeCandidateImpact(baselineResults, candidateResults, candidateBoxe
     }
   });
   
-  // Calculate averages and sort by impact
   const results = Object.values(impact)
     .map(c => ({
       ...c,
@@ -383,7 +440,6 @@ function analyzeCandidateImpact(baselineResults, candidateResults, candidateBoxe
     .filter(c => c.ordersCaptured > 0)
     .sort((a, b) => b.ordersCaptured - a.ordersCaptured);
   
-  // Calculate cumulative impact for diminishing returns
   let cumulative = 0;
   results.forEach(r => {
     cumulative += r.ordersCaptured;
@@ -393,11 +449,148 @@ function analyzeCandidateImpact(baselineResults, candidateResults, candidateBoxe
   return results;
 }
 
+function analyzeUSPSFlatRateImpact(baselineResults, uspsResults, uspsBoxes) {
+  const impact = {};
+  
+  uspsBoxes.forEach(box => {
+    impact[box.name] = {
+      name: box.name,
+      volume: box.volume,
+      dims: `${box.length}x${box.width}x${box.height}`,
+      ordersCaptured: 0,
+      previousBoxes: {},
+      orderWeights: []
+    };
+  });
+  
+  baselineResults.forEach((baseline, i) => {
+    const withUSPS = uspsResults[i];
+    
+    if (!baseline.success || !withUSPS.success) return;
+    if (baseline.box === withUSPS.box) return;
+    
+    // Check if new box is USPS flat rate
+    const uspsBox = uspsBoxes.find(b => b.name === withUSPS.box);
+    if (uspsBox && impact[withUSPS.box]) {
+      const uspsImpact = impact[withUSPS.box];
+      uspsImpact.ordersCaptured++;
+      uspsImpact.previousBoxes[baseline.box] = (uspsImpact.previousBoxes[baseline.box] || 0) + 1;
+      uspsImpact.orderWeights.push(withUSPS.itemsWeight);
+    }
+  });
+  
+  return Object.values(impact)
+    .map(u => ({
+      ...u,
+      avgWeight: u.orderWeights.length > 0
+        ? Math.round(u.orderWeights.reduce((a, b) => a + b, 0) / u.orderWeights.length * 100) / 100
+        : 0,
+      maxWeight: u.orderWeights.length > 0 ? Math.max(...u.orderWeights) : 0,
+      minWeight: u.orderWeights.length > 0 ? Math.min(...u.orderWeights) : 0
+    }))
+    .filter(u => u.ordersCaptured > 0)
+    .sort((a, b) => b.ordersCaptured - a.ordersCaptured);
+}
+
+function compareAlgorithms(ffdResults, ebafitResults) {
+  let ffdWins = 0;
+  let ebafitWins = 0;
+  let ties = 0;
+  let bothFailed = 0;
+  
+  const differences = [];
+  
+  ffdResults.forEach((ffd, i) => {
+    const ebafit = ebafitResults[i];
+    
+    if (!ffd.success && !ebafit.success) {
+      bothFailed++;
+      return;
+    }
+    
+    if (ffd.success && !ebafit.success) {
+      ffdWins++;
+      return;
+    }
+    
+    if (!ffd.success && ebafit.success) {
+      ebafitWins++;
+      return;
+    }
+    
+    // Both succeeded - compare box sizes
+    if (ffd.boxVolume < ebafit.boxVolume) {
+      ffdWins++;
+      differences.push({
+        orderId: ffd.orderId,
+        winner: 'ffd',
+        ffdBox: ffd.box,
+        ebafitBox: ebafit.box,
+        volumeDiff: ebafit.boxVolume - ffd.boxVolume
+      });
+    } else if (ebafit.boxVolume < ffd.boxVolume) {
+      ebafitWins++;
+      differences.push({
+        orderId: ebafit.orderId,
+        winner: 'ebafit',
+        ffdBox: ffd.box,
+        ebafitBox: ebafit.box,
+        volumeDiff: ffd.boxVolume - ebafit.boxVolume
+      });
+    } else {
+      ties++;
+    }
+  });
+  
+  return {
+    ffdWins,
+    ebafitWins,
+    ties,
+    bothFailed,
+    totalCompared: ffdResults.length,
+    significantDifferences: differences.length,
+    sampleDifferences: differences.slice(0, 10)
+  };
+}
+
+// ============================================================
+// Simulation Runner
+// ============================================================
+
+function runSimulation(orderList, boxes, products, algorithm, label) {
+  console.log(`Running ${label}...`);
+  const startTime = Date.now();
+  const results = [];
+  let processed = 0;
+  
+  for (const order of orderList) {
+    const result = packOrderWithAlgorithm(order.items, boxes, products, algorithm);
+    result.orderId = order.orderId;
+    result.destinationZip = order.destinationZip;
+    results.push(result);
+    
+    processed++;
+    if (processed % 10000 === 0) {
+      console.log(`  Processed ${processed} / ${orderList.length} orders...`);
+    }
+  }
+  
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log(`  Completed in ${elapsed}s`);
+  
+  return results;
+}
+
 // ============================================================
 // Main
 // ============================================================
 
 async function main() {
+  console.log('='.repeat(60));
+  console.log('BATCH CARTONIZATION SIMULATOR v2');
+  console.log('='.repeat(60));
+  console.log('');
+  
   console.log('Loading data...');
   
   const products = loadTSV('./PIM_SKU_DATA.tsv', 'SKU');
@@ -411,128 +604,179 @@ async function main() {
   console.log(`  Unique orders: ${orderList.length}`);
   
   const boxes = loadBoxes('./boxes.json');
-  console.log(`  Current boxes: ${boxes.current.length}`);
+  console.log(`  Texas Art boxes: ${boxes.texasArt.length}`);
   console.log(`  Candidate boxes: ${boxes.candidates.length}`);
+  console.log(`  USPS Flat Rate boxes: ${boxes.usps.length}`);
   console.log('');
   
-  // ========== BASELINE SIMULATION ==========
-  console.log('Running baseline simulation (current boxes only)...');
-  const baselineStart = Date.now();
+  // ========== SIMULATION 1: Baseline FFD (Texas Art only) ==========
+  const baselineFFD = runSimulation(orderList, boxes.current, products, 'ffd', 'Baseline FFD (Texas Art boxes)');
   
-  const baselineResults = [];
-  let processed = 0;
+  // ========== SIMULATION 2: Baseline EB-AFIT (Texas Art only) ==========
+  const baselineEBAFIT = runSimulation(orderList, boxes.current, products, 'ebafit', 'Baseline EB-AFIT (Texas Art boxes)');
   
-  for (const order of orderList) {
-    const result = packOrder(order.items, boxes.current, products);
-    result.orderId = order.orderId;
-    result.destinationZip = order.destinationZip;
-    baselineResults.push(result);
-    
-    processed++;
-    if (processed % 10000 === 0) {
-      console.log(`  Processed ${processed} / ${orderList.length} orders...`);
-    }
-  }
+  // ========== SIMULATION 3: With Candidates (FFD) ==========
+  const withCandidatesFFD = runSimulation(orderList, boxes.withCandidates, products, 'ffd', 'With Candidates FFD');
   
-  const baselineElapsed = ((Date.now() - baselineStart) / 1000).toFixed(1);
-  console.log(`  Baseline completed in ${baselineElapsed}s`);
+  // ========== SIMULATION 4: With USPS Flat Rate (FFD) ==========
+  const withUSPSFFD = runSimulation(orderList, boxes.withUSPS, products, 'ffd', 'With USPS Flat Rate FFD');
+  
+  // ========== SIMULATION 5: All boxes (FFD) ==========
+  const allBoxesFFD = runSimulation(orderList, boxes.all, products, 'ffd', 'All Boxes FFD');
+  
   console.log('');
-  
-  // ========== CANDIDATE SIMULATION ==========
-  console.log('Running candidate simulation (current + candidate boxes)...');
-  const candidateStart = Date.now();
-  
-  const candidateResults = [];
-  processed = 0;
-  
-  for (const order of orderList) {
-    const result = packOrder(order.items, boxes.all, products);
-    result.orderId = order.orderId;
-    result.destinationZip = order.destinationZip;
-    candidateResults.push(result);
-    
-    processed++;
-    if (processed % 10000 === 0) {
-      console.log(`  Processed ${processed} / ${orderList.length} orders...`);
-    }
-  }
-  
-  const candidateElapsed = ((Date.now() - candidateStart) / 1000).toFixed(1);
-  console.log(`  Candidate simulation completed in ${candidateElapsed}s`);
-  console.log('');
-  
-  // ========== ANALYSIS ==========
   console.log('Analyzing results...');
   
-  const baselineAnalysis = analyzeResults(baselineResults);
-  const candidateAnalysis = analyzeResults(candidateResults);
-  const candidateImpact = analyzeCandidateImpact(baselineResults, candidateResults, boxes.candidates);
+  // Analyses
+  const baselineFFDAnalysis = analyzeResults(baselineFFD, 'Baseline FFD');
+  const baselineEBAFITAnalysis = analyzeResults(baselineEBAFIT, 'Baseline EB-AFIT');
+  const withCandidatesAnalysis = analyzeResults(withCandidatesFFD, 'With Candidates');
+  const withUSPSAnalysis = analyzeResults(withUSPSFFD, 'With USPS Flat Rate');
+  const allBoxesAnalysis = analyzeResults(allBoxesFFD, 'All Boxes');
   
-  // ========== OUTPUT ==========
-  console.log('\n' + '='.repeat(60));
-  console.log('BATCH SIMULATION RESULTS');
+  // Comparisons
+  const algorithmComparison = compareAlgorithms(baselineFFD, baselineEBAFIT);
+  const candidateImpact = analyzeCandidateImpact(baselineFFD, withCandidatesFFD, boxes.candidates);
+  const uspsImpact = analyzeUSPSFlatRateImpact(baselineFFD, withUSPSFFD, boxes.usps);
+  
+  // ========== CONSOLE OUTPUT ==========
+  console.log('');
+  console.log('='.repeat(60));
+  console.log('RESULTS SUMMARY');
   console.log('='.repeat(60));
   
-  console.log('\n--- Baseline Summary (Current Boxes) ---');
-  console.log(`Total orders:    ${baselineAnalysis.summary.totalOrders}`);
-  console.log(`Successful:      ${baselineAnalysis.summary.successful}`);
-  console.log(`Failed:          ${baselineAnalysis.summary.failed}`);
-  console.log(`Success rate:    ${baselineAnalysis.summary.successRate}`);
+  console.log('\n--- Baseline (Texas Art boxes only) ---');
+  console.log(`Total orders:    ${baselineFFDAnalysis.summary.totalOrders}`);
+  console.log(`Successful:      ${baselineFFDAnalysis.summary.successful}`);
+  console.log(`Failed:          ${baselineFFDAnalysis.summary.failed}`);
+  console.log(`Success rate:    ${baselineFFDAnalysis.summary.successRate}`);
   
-  console.log('\n--- Efficiency Distribution (Baseline) ---');
-  Object.entries(baselineAnalysis.efficiencyDistribution).forEach(([bucket, count]) => {
-    const pct = ((count / baselineAnalysis.summary.successful) * 100).toFixed(1);
+  console.log('\n--- Efficiency Distribution (Baseline FFD) ---');
+  Object.entries(baselineFFDAnalysis.efficiencyDistribution).forEach(([bucket, count]) => {
+    const pct = ((count / baselineFFDAnalysis.summary.successful) * 100).toFixed(1);
     console.log(`  ${bucket}: ${count} (${pct}%)`);
   });
   
-  console.log('\n--- With Candidate Boxes ---');
-  console.log(`Poor efficiency orders: ${baselineAnalysis.efficiencyDistribution['poor (<30%)']} → ${candidateAnalysis.efficiencyDistribution['poor (<30%)']}`);
+  console.log('\n--- Algorithm Comparison (FFD vs EB-AFIT) ---');
+  console.log(`  FFD wins (smaller box):     ${algorithmComparison.ffdWins}`);
+  console.log(`  EB-AFIT wins (smaller box): ${algorithmComparison.ebafitWins}`);
+  console.log(`  Ties (same box):            ${algorithmComparison.ties}`);
+  console.log(`  Both failed:                ${algorithmComparison.bothFailed}`);
   
-  console.log('\n' + '='.repeat(60));
-  console.log('CANDIDATE BOX ANALYSIS');
-  console.log('='.repeat(60));
+  console.log('\n--- Candidate Box Impact ---');
+  console.log(`Poor efficiency baseline: ${baselineFFDAnalysis.efficiencyDistribution['poor (<30%)']} orders`);
+  console.log(`Poor efficiency with candidates: ${withCandidatesAnalysis.efficiencyDistribution['poor (<30%)']} orders`);
+  console.log(`Improvement: ${baselineFFDAnalysis.efficiencyDistribution['poor (<30%)'] - withCandidatesAnalysis.efficiencyDistribution['poor (<30%)']} orders`);
   
-  if (candidateImpact.length === 0) {
-    console.log('\nNo candidate boxes captured any orders.');
-  } else {
-    console.log('\nRanked by orders captured:\n');
-    console.log('Box              Volume   Orders    Efficiency        Cumulative');
-    console.log('                         Captured  Before → After    Orders');
-    console.log('-'.repeat(70));
-    
-    candidateImpact.forEach((c, i) => {
-      const boxName = c.dims.padEnd(12);
-      const volume = c.volume.toString().padEnd(8);
-      const captured = c.ordersCaptured.toString().padEnd(9);
-      const effChange = `${c.avgEfficiencyBefore}% → ${c.avgEfficiencyAfter}%`.padEnd(17);
-      const cumulative = c.cumulativeOrders.toString();
-      console.log(`${boxName} ${volume} ${captured} ${effChange} ${cumulative}`);
+  if (candidateImpact.length > 0) {
+    console.log('\nTop candidate boxes:');
+    candidateImpact.slice(0, 5).forEach((c, i) => {
+      console.log(`  ${i+1}. ${c.dims} (${c.volume} cu.in.): ${c.ordersCaptured} orders, efficiency ${c.avgEfficiencyBefore}% → ${c.avgEfficiencyAfter}%`);
     });
-    
-    console.log('\n--- Recommendation ---');
-    const top3 = candidateImpact.slice(0, 3);
-    const totalCaptured = top3.reduce((sum, c) => sum + c.ordersCaptured, 0);
-    console.log(`Adding ${top3.map(c => c.dims).join(', ')} would improve ${totalCaptured} orders`);
   }
   
-  // Save results
+  console.log('\n--- USPS Flat Rate Impact ---');
+  if (uspsImpact.length > 0) {
+    console.log('Orders that could use USPS Flat Rate:');
+    uspsImpact.forEach(u => {
+      console.log(`  ${u.name}: ${u.ordersCaptured} orders`);
+      console.log(`    Weight range: ${u.minWeight.toFixed(2)} - ${u.maxWeight.toFixed(2)} lbs (avg: ${u.avgWeight.toFixed(2)} lbs)`);
+    });
+  } else {
+    console.log('  No orders would benefit from USPS Flat Rate boxes');
+  }
+  
+  // ========== SAVE RESULTS ==========
   const outputPath = './simulation_results.json';
-  fs.writeFileSync(outputPath, JSON.stringify({
-    analysis: baselineAnalysis,
-    candidateAnalysis: {
-      summary: candidateAnalysis.summary,
-      efficiencyDistribution: candidateAnalysis.efficiencyDistribution,
-      boxUsage: candidateAnalysis.boxUsage
-    },
-    candidateImpact,
+  const output = {
     timestamp: new Date().toISOString(),
     config: {
-      boxInventory: 'texasArt only',
-      algorithm: 'FFD',
-      candidateBoxes: boxes.candidates.map(b => b.name)
+      boxInventory: 'texasArt',
+      candidateBoxes: boxes.candidates.map(b => b.name),
+      uspsBoxes: boxes.usps.map(b => b.name),
+      algorithms: ['ffd', 'ebafit']
+    },
+    analysis: baselineFFDAnalysis,
+    algorithmComparison,
+    candidateAnalysis: {
+      summary: withCandidatesAnalysis.summary,
+      efficiencyDistribution: withCandidatesAnalysis.efficiencyDistribution,
+      boxUsage: withCandidatesAnalysis.boxUsage
+    },
+    candidateImpact,
+    uspsAnalysis: {
+      summary: withUSPSAnalysis.summary,
+      efficiencyDistribution: withUSPSAnalysis.efficiencyDistribution,
+      flatRateUsage: withUSPSAnalysis.flatRateUsage
+    },
+    uspsImpact,
+    allBoxesAnalysis: {
+      summary: allBoxesAnalysis.summary,
+      efficiencyDistribution: allBoxesAnalysis.efficiencyDistribution,
+      boxUsage: allBoxesAnalysis.boxUsage
+    },
+    // Data for rate lookups - orders that could use different boxes
+    rateComparisonData: {
+      totalSuccessfulOrders: baselineFFD.filter(r => r.success).length,
+      ordersForUSPSComparison: uspsImpact.reduce((sum, u) => sum + u.ordersCaptured, 0),
+      ordersForCandidateComparison: candidateImpact.reduce((sum, c) => sum + c.ordersCaptured, 0)
     }
-  }, null, 2));
+  };
+  
+  fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
   console.log(`\nResults saved to: ${outputPath}`);
+  
+  // Save detailed data for rate lookups
+  const rateDataPath = './rate_comparison_orders.json';
+  const rateData = {
+    timestamp: new Date().toISOString(),
+    // Orders where USPS flat rate could be used
+    uspsEligibleOrders: baselineFFD
+      .map((baseline, i) => {
+        const withUSPS = withUSPSFFD[i];
+        if (!baseline.success || !withUSPS.success) return null;
+        if (!withUSPS.flatRate) return null;
+        
+        return {
+          orderId: baseline.orderId,
+          destinationZip: baseline.destinationZip,
+          currentBox: baseline.box,
+          currentBoxDims: baseline.boxDims,
+          uspsBox: withUSPS.box,
+          uspsBoxDims: withUSPS.boxDims,
+          itemsWeight: baseline.itemsWeight,
+          itemsVolume: baseline.itemsVolume
+        };
+      })
+      .filter(Boolean),
+    // Orders where candidate boxes improve efficiency
+    candidateEligibleOrders: baselineFFD
+      .map((baseline, i) => {
+        const withCandidate = withCandidatesFFD[i];
+        if (!baseline.success || !withCandidate.success) return null;
+        if (baseline.box === withCandidate.box) return null;
+        
+        const candidateBox = boxes.candidates.find(b => b.name === withCandidate.box);
+        if (!candidateBox) return null;
+        
+        return {
+          orderId: baseline.orderId,
+          destinationZip: baseline.destinationZip,
+          currentBox: baseline.box,
+          currentBoxDims: baseline.boxDims,
+          candidateBox: withCandidate.box,
+          candidateBoxDims: withCandidate.boxDims,
+          itemsWeight: baseline.itemsWeight,
+          itemsVolume: baseline.itemsVolume,
+          efficiencyBefore: baseline.efficiency,
+          efficiencyAfter: withCandidate.efficiency
+        };
+      })
+      .filter(Boolean)
+  };
+  
+  fs.writeFileSync(rateDataPath, JSON.stringify(rateData, null, 2));
+  console.log(`Rate comparison data saved to: ${rateDataPath}`);
 }
 
 main().catch(console.error);

@@ -15,7 +15,6 @@
       min-height: 100vh;
     }
     
-    /* Top Navigation */
     .top-nav {
       background: #12121a;
       border-bottom: 1px solid #2a2a3a;
@@ -28,62 +27,17 @@
       z-index: 1000;
     }
     
-    .nav-brand {
-      font-size: 14px;
-      font-weight: 600;
-      color: #fff;
-      margin-right: 30px;
-    }
+    .nav-brand { font-size: 14px; font-weight: 600; color: #fff; margin-right: 30px; }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-link { padding: 8px 16px; color: #888; text-decoration: none; font-size: 12px; font-weight: 500; border-radius: 4px; transition: all 0.15s; }
+    .nav-link:hover { color: #fff; background: #1a1a25; }
+    .nav-link.active { color: #4a9eff; background: rgba(74, 158, 255, 0.1); }
     
-    .nav-links {
-      display: flex;
-      gap: 4px;
-    }
+    .main-content { padding: 20px; max-width: 1600px; margin: 0 auto; }
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+    .page-subtitle { font-size: 13px; color: #666; }
     
-    .nav-link {
-      padding: 8px 16px;
-      color: #888;
-      text-decoration: none;
-      font-size: 12px;
-      font-weight: 500;
-      border-radius: 4px;
-      transition: all 0.15s;
-    }
-    
-    .nav-link:hover {
-      color: #fff;
-      background: #1a1a25;
-    }
-    
-    .nav-link.active {
-      color: #4a9eff;
-      background: rgba(74, 158, 255, 0.1);
-    }
-    
-    /* Main Content */
-    .main-content {
-      padding: 20px;
-      max-width: 1600px;
-      margin: 0 auto;
-    }
-    
-    .page-header {
-      margin-bottom: 24px;
-    }
-    
-    .page-title {
-      font-size: 24px;
-      font-weight: 600;
-      color: #fff;
-      margin-bottom: 8px;
-    }
-    
-    .page-subtitle {
-      font-size: 13px;
-      color: #666;
-    }
-    
-    /* Data Source Section */
     .data-source {
       background: #12121a;
       border: 1px solid #2a2a3a;
@@ -94,465 +48,127 @@
       align-items: center;
       gap: 16px;
     }
+    .data-source-info { flex: 1; }
+    .data-source-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 4px; }
+    .data-source-value { font-size: 13px; color: #fff; }
+    .data-source-meta { font-size: 11px; color: #666; margin-top: 2px; }
     
-    .data-source-info {
-      flex: 1;
-    }
+    .btn { padding: 8px 16px; background: #1a1a25; border: 1px solid #2a2a3a; border-radius: 4px; color: #888; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+    .btn:hover { background: #22222f; color: #fff; border-color: #3a3a4a; }
     
-    .data-source-label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #666;
-      margin-bottom: 4px;
-    }
-    
-    .data-source-value {
-      font-size: 13px;
-      color: #fff;
-    }
-    
-    .data-source-meta {
-      font-size: 11px;
-      color: #666;
-      margin-top: 2px;
-    }
-    
-    .btn {
-      padding: 8px 16px;
-      background: #1a1a25;
-      border: 1px solid #2a2a3a;
-      border-radius: 4px;
-      color: #888;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    
-    .btn:hover {
-      background: #22222f;
-      color: #fff;
-      border-color: #3a3a4a;
-    }
-    
-    .btn-primary {
-      background: #4a9eff;
-      border-color: #4a9eff;
-      color: #fff;
-    }
-    
-    .btn-primary:hover {
-      background: #3a8eef;
-    }
-    
-    /* Dashboard Grid */
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-    
-    .stat-card {
-      background: #12121a;
-      border: 1px solid #2a2a3a;
-      border-radius: 8px;
-      padding: 16px;
-    }
-    
-    .stat-label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #666;
-      margin-bottom: 8px;
-    }
-    
-    .stat-value {
-      font-size: 28px;
-      font-weight: 600;
-      color: #fff;
-    }
-    
+    .dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+    .stat-card { background: #12121a; border: 1px solid #2a2a3a; border-radius: 8px; padding: 16px; }
+    .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 8px; }
+    .stat-value { font-size: 28px; font-weight: 600; color: #fff; }
     .stat-value.success { color: #44cc88; }
     .stat-value.warning { color: #ffd93d; }
     .stat-value.danger { color: #ff6b6b; }
+    .stat-value.info { color: #4a9eff; }
+    .stat-subtext { font-size: 11px; color: #666; margin-top: 4px; }
     
-    .stat-subtext {
-      font-size: 11px;
-      color: #666;
-      margin-top: 4px;
-    }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .chart-card { background: #12121a; border: 1px solid #2a2a3a; border-radius: 8px; padding: 16px; }
+    .chart-card.full-width { grid-column: 1 / -1; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .chart-title { font-size: 13px; font-weight: 600; color: #fff; }
+    .chart-container { position: relative; height: 250px; }
+    .chart-container.tall { height: 350px; }
     
-    /* Charts Grid */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
+    .section { background: #12121a; border: 1px solid #2a2a3a; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+    .section.highlight { border-color: #44cc88; background: linear-gradient(135deg, rgba(68, 204, 136, 0.05) 0%, #12121a 100%); }
+    .section.info-highlight { border-color: #4a9eff; background: linear-gradient(135deg, rgba(74, 158, 255, 0.05) 0%, #12121a 100%); }
+    .section.warning-highlight { border-color: #ffd93d; background: linear-gradient(135deg, rgba(255, 217, 61, 0.05) 0%, #12121a 100%); }
     
-    .chart-card {
-      background: #12121a;
-      border: 1px solid #2a2a3a;
-      border-radius: 8px;
-      padding: 16px;
-    }
+    .section-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .section-title { font-size: 15px; font-weight: 600; color: #fff; }
+    .section-subtitle { font-size: 11px; color: #666; margin-top: 4px; }
     
-    .chart-card.full-width {
-      grid-column: 1 / -1;
-    }
+    .badge { padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+    .badge.success { background: rgba(68, 204, 136, 0.15); border: 1px solid #44cc88; color: #44cc88; }
+    .badge.info { background: rgba(74, 158, 255, 0.15); border: 1px solid #4a9eff; color: #4a9eff; }
+    .badge.warning { background: rgba(255, 217, 61, 0.15); border: 1px solid #ffd93d; color: #ffd93d; }
     
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
+    /* Algorithm Comparison */
+    .algo-comparison { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center; }
+    .algo-box { text-align: center; padding: 20px; background: #1a1a25; border-radius: 8px; }
+    .algo-name { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .algo-name.ffd { color: #4a9eff; }
+    .algo-name.ebafit { color: #44cc88; }
+    .algo-wins { font-size: 32px; font-weight: 700; }
+    .algo-label { font-size: 10px; color: #666; margin-top: 4px; }
+    .algo-vs { font-size: 24px; color: #444; font-weight: 300; }
+    .algo-ties { text-align: center; margin-top: 12px; color: #666; font-size: 12px; }
     
-    .chart-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #fff;
-    }
+    /* Tables */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+    .data-table th { text-align: left; padding: 10px 12px; color: #666; font-weight: 500; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; border-bottom: 1px solid #2a2a3a; background: #0d0d12; }
+    .data-table td { padding: 12px; border-bottom: 1px solid #1a1a25; vertical-align: middle; }
+    .data-table tr:hover { background: #1a1a25; }
+    .data-table tr.top-pick { background: rgba(68, 204, 136, 0.08); }
     
-    .chart-container {
-      position: relative;
-      height: 250px;
-    }
-    
-    .chart-container.tall {
-      height: 350px;
-    }
-    
-    /* Candidate Box Analysis */
-    .candidate-section {
-      background: #12121a;
-      border: 1px solid #2a2a3a;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 20px;
-    }
-    
-    .candidate-section.highlight {
-      border-color: #44cc88;
-      background: linear-gradient(135deg, rgba(68, 204, 136, 0.05) 0%, #12121a 100%);
-    }
-    
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 16px;
-    }
-    
-    .section-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .section-subtitle {
-      font-size: 11px;
-      color: #666;
-      margin-top: 4px;
-    }
-    
-    .recommendation-badge {
-      background: rgba(68, 204, 136, 0.15);
-      border: 1px solid #44cc88;
-      color: #44cc88;
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 500;
-    }
-    
-    /* Candidate Table */
-    .candidate-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-      margin-top: 12px;
-    }
-    
-    .candidate-table th {
-      text-align: left;
-      padding: 10px 12px;
-      color: #666;
-      font-weight: 500;
-      text-transform: uppercase;
-      font-size: 10px;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid #2a2a3a;
-      background: #0d0d12;
-    }
-    
-    .candidate-table td {
-      padding: 12px;
-      border-bottom: 1px solid #1a1a25;
-      vertical-align: middle;
-    }
-    
-    .candidate-table tr:hover {
-      background: #1a1a25;
-    }
-    
-    .candidate-table tr.top-pick {
-      background: rgba(68, 204, 136, 0.08);
-    }
-    
-    .candidate-table tr.top-pick td {
-      border-bottom-color: rgba(68, 204, 136, 0.2);
-    }
-    
-    .rank-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    
+    .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: 11px; font-weight: 600; }
     .rank-badge.gold { background: rgba(255, 217, 61, 0.2); color: #ffd93d; }
     .rank-badge.silver { background: rgba(192, 192, 192, 0.2); color: #c0c0c0; }
     .rank-badge.bronze { background: rgba(205, 127, 50, 0.2); color: #cd7f32; }
     .rank-badge.normal { background: #1a1a25; color: #666; }
     
-    .box-name {
-      font-weight: 600;
-      color: #fff;
-    }
+    .box-name { font-weight: 600; color: #fff; }
+    .box-volume { color: #888; }
     
-    .box-volume {
-      color: #888;
-    }
+    .efficiency-change { display: flex; align-items: center; gap: 6px; }
+    .efficiency-before { color: #ff6b6b; }
+    .efficiency-arrow { color: #44cc88; }
+    .efficiency-after { color: #44cc88; font-weight: 600; }
     
-    .efficiency-change {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+    .previous-box-list { color: #888; }
+    .previous-box-item { display: inline-block; background: #1a1a25; padding: 3px 8px; border-radius: 3px; margin: 2px; }
     
-    .efficiency-before {
-      color: #ff6b6b;
-    }
+    /* Gap Analysis */
+    .gap-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .gap-card { background: #1a1a25; border: 1px solid #2a2a3a; border-radius: 6px; padding: 12px; }
+    .gap-card.highlight { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.05); }
+    .gap-range { font-size: 11px; font-weight: 600; color: #4a9eff; margin-bottom: 8px; }
+    .gap-orders { font-size: 20px; font-weight: 600; color: #fff; }
+    .gap-orders-label { font-size: 10px; color: #666; }
+    .gap-ideal { font-size: 10px; color: #888; margin-top: 8px; }
+    .gap-forced { margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2a3a; }
+    .gap-forced-label { font-size: 9px; text-transform: uppercase; color: #666; margin-bottom: 4px; }
+    .gap-forced-item { font-size: 10px; color: #888; display: flex; justify-content: space-between; padding: 2px 0; }
     
-    .efficiency-arrow {
-      color: #44cc88;
-    }
+    /* Failures */
+    .failures-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+    .failure-card { background: #1a1a25; border-radius: 6px; padding: 12px; }
+    .failure-reason { font-size: 11px; color: #888; margin-bottom: 4px; }
+    .failure-count { font-size: 18px; font-weight: 600; color: #ff6b6b; }
+    .failure-desc { font-size: 9px; color: #555; margin-top: 4px; }
     
-    .efficiency-after {
-      color: #44cc88;
-      font-weight: 600;
-    }
+    /* USPS Section */
+    .usps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .usps-card { background: #1a1a25; border: 1px solid #2a2a3a; border-radius: 6px; padding: 16px; }
+    .usps-card.active { border-color: #3d85c6; }
+    .usps-box-name { font-size: 13px; font-weight: 600; color: #3d85c6; margin-bottom: 8px; }
+    .usps-orders { font-size: 24px; font-weight: 700; color: #fff; }
+    .usps-orders-label { font-size: 10px; color: #666; }
+    .usps-weight { font-size: 11px; color: #888; margin-top: 8px; }
     
-    .previous-box-list {
-      color: #888;
-    }
+    .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px; color: #666; }
+    .loading-spinner { width: 32px; height: 32px; border: 3px solid #2a2a3a; border-top-color: #4a9eff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     
-    .previous-box-item {
-      display: inline-block;
-      background: #1a1a25;
-      padding: 3px 8px;
-      border-radius: 3px;
-      margin: 2px;
-    }
+    .empty-state { text-align: center; padding: 60px; color: #666; }
+    .empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-state-title { font-size: 16px; color: #888; margin-bottom: 8px; }
+    .empty-state-text { font-size: 12px; margin-bottom: 20px; }
     
-    /* Gap Analysis Section */
-    .gap-analysis {
-      background: #12121a;
-      border: 1px solid #2a2a3a;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 20px;
-    }
-    
-    .gap-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-    
-    .gap-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #fff;
-    }
-    
-    .gap-subtitle {
-      font-size: 11px;
-      color: #666;
-    }
-    
-    .gap-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-    }
-    
-    .gap-card {
-      background: #1a1a25;
-      border: 1px solid #2a2a3a;
-      border-radius: 6px;
-      padding: 12px;
-    }
-    
-    .gap-card.highlight {
-      border-color: #ff6b6b;
-      background: rgba(255, 107, 107, 0.05);
-    }
-    
-    .gap-range {
-      font-size: 11px;
-      font-weight: 600;
-      color: #4a9eff;
-      margin-bottom: 8px;
-    }
-    
-    .gap-orders {
-      font-size: 20px;
-      font-weight: 600;
-      color: #fff;
-    }
-    
-    .gap-orders-label {
-      font-size: 10px;
-      color: #666;
-    }
-    
-    .gap-ideal {
-      font-size: 10px;
-      color: #888;
-      margin-top: 8px;
-    }
-    
-    .gap-forced {
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid #2a2a3a;
-    }
-    
-    .gap-forced-label {
-      font-size: 9px;
-      text-transform: uppercase;
-      color: #666;
-      margin-bottom: 4px;
-    }
-    
-    .gap-forced-item {
-      font-size: 10px;
-      color: #888;
-      display: flex;
-      justify-content: space-between;
-      padding: 2px 0;
-    }
-    
-    /* Failure Breakdown */
-    .failures-section {
-      background: #12121a;
-      border: 1px solid #2a2a3a;
-      border-radius: 8px;
-      padding: 16px;
-    }
-    
-    .failures-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-top: 16px;
-    }
-    
-    .failure-card {
-      background: #1a1a25;
-      border-radius: 6px;
-      padding: 12px;
-    }
-    
-    .failure-reason {
-      font-size: 11px;
-      color: #888;
-      margin-bottom: 4px;
-    }
-    
-    .failure-count {
-      font-size: 18px;
-      font-weight: 600;
-      color: #ff6b6b;
-    }
-    
-    .failure-desc {
-      font-size: 9px;
-      color: #555;
-      margin-top: 4px;
-    }
-    
-    /* Loading State */
-    .loading-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 60px;
-      color: #666;
-    }
-    
-    .loading-spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid #2a2a3a;
-      border-top-color: #4a9eff;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 16px;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    
-    /* Empty State */
-    .empty-state {
-      text-align: center;
-      padding: 60px;
-      color: #666;
-    }
-    
-    .empty-state-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-      opacity: 0.5;
-    }
-    
-    .empty-state-title {
-      font-size: 16px;
-      color: #888;
-      margin-bottom: 8px;
-    }
-    
-    .empty-state-text {
-      font-size: 12px;
-      margin-bottom: 20px;
-    }
-    
-    /* Scrollbar */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: #1a1a25; }
     ::-webkit-scrollbar-thumb { background: #3a3a4a; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #4a4a5a; }
-
-    /* Responsive */
+    
     @media (max-width: 1200px) {
       .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
       .gap-grid { grid-template-columns: repeat(2, 1fr); }
       .failures-grid { grid-template-columns: repeat(2, 1fr); }
+      .usps-grid { grid-template-columns: repeat(2, 1fr); }
     }
     
     @media (max-width: 768px) {
@@ -560,6 +176,8 @@
       .dashboard-grid { grid-template-columns: 1fr; }
       .gap-grid { grid-template-columns: 1fr; }
       .failures-grid { grid-template-columns: 1fr; }
+      .usps-grid { grid-template-columns: 1fr; }
+      .algo-comparison { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -575,7 +193,7 @@
   <main class="main-content">
     <div class="page-header">
       <h1 class="page-title">Batch Simulation Results</h1>
-      <p class="page-subtitle">Analyze historical orders against current box inventory to identify optimization opportunities</p>
+      <p class="page-subtitle">Analyze historical orders to identify optimization opportunities across boxes and algorithms</p>
     </div>
     
     <div id="app-content">
@@ -615,11 +233,12 @@
     }
     
     function renderDashboard() {
-      const { analysis, candidateAnalysis, candidateImpact, timestamp, config } = simulationData;
+      const { analysis, algorithmComparison, candidateAnalysis, candidateImpact, uspsAnalysis, uspsImpact, allBoxesAnalysis, rateComparisonData, timestamp, config } = simulationData;
       const { summary, failureReasons, boxUsage, efficiencyDistribution, lowEfficiencyCount, idealBoxAnalysis } = analysis;
       
-      // Check if we have candidate data
       const hasCandidateData = candidateImpact && candidateImpact.length > 0;
+      const hasUSPSData = uspsImpact && uspsImpact.length > 0;
+      const hasAlgoComparison = algorithmComparison && algorithmComparison.totalCompared > 0;
       
       document.getElementById('app-content').innerHTML = `
         <!-- Data Source -->
@@ -627,7 +246,11 @@
           <div class="data-source-info">
             <div class="data-source-label">Simulation Run</div>
             <div class="data-source-value">${new Date(timestamp).toLocaleString()}</div>
-            <div class="data-source-meta">Algorithm: ${config.algorithm} | Box Inventory: ${config.boxInventory}${config.candidateBoxes ? ` | Candidates tested: ${config.candidateBoxes.length}` : ''}</div>
+            <div class="data-source-meta">
+              Algorithms: ${config.algorithms?.join(', ') || 'FFD'} | 
+              Candidate boxes: ${config.candidateBoxes?.length || 0} | 
+              USPS boxes: ${config.uspsBoxes?.length || 0}
+            </div>
           </div>
           <button class="btn" onclick="location.reload()">Refresh</button>
         </div>
@@ -645,16 +268,20 @@
             <div class="stat-subtext">${summary.successRate} success rate</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Failed to Pack</div>
-            <div class="stat-value danger">${summary.failed.toLocaleString()}</div>
-            <div class="stat-subtext">Missing data or no valid box</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Low Efficiency Orders</div>
+            <div class="stat-label">Poor Efficiency Orders</div>
             <div class="stat-value warning">${lowEfficiencyCount.toLocaleString()}</div>
             <div class="stat-subtext">&lt;40% box utilization</div>
           </div>
+          <div class="stat-card">
+            <div class="stat-label">Ready for Rate Analysis</div>
+            <div class="stat-value info">${(rateComparisonData?.ordersForUSPSComparison || 0) + (rateComparisonData?.ordersForCandidateComparison || 0)}</div>
+            <div class="stat-subtext">Orders with optimization potential</div>
+          </div>
         </div>
+        
+        ${hasAlgoComparison ? renderAlgorithmComparison(algorithmComparison) : ''}
+        
+        ${hasUSPSData ? renderUSPSAnalysis(uspsImpact, uspsAnalysis) : ''}
         
         ${hasCandidateData ? renderCandidateAnalysis(candidateImpact, candidateAnalysis, analysis) : ''}
         
@@ -679,7 +306,7 @@
           ${hasCandidateData ? `
           <div class="chart-card full-width">
             <div class="chart-header">
-              <div class="chart-title">Diminishing Returns: Cumulative Orders Improved by Adding Boxes</div>
+              <div class="chart-title">Candidate Box Impact: Cumulative Orders Improved</div>
             </div>
             <div class="chart-container tall">
               <canvas id="diminishing-returns-chart"></canvas>
@@ -689,11 +316,11 @@
         </div>
         
         <!-- Gap Analysis -->
-        <div class="gap-analysis">
-          <div class="gap-header">
+        <div class="section">
+          <div class="section-header">
             <div>
-              <div class="gap-title">Box Inventory Gap Analysis</div>
-              <div class="gap-subtitle">Orders with &lt;40% efficiency grouped by ideal box volume</div>
+              <div class="section-title">Box Inventory Gap Analysis</div>
+              <div class="section-subtitle">Orders with &lt;40% efficiency grouped by ideal box volume</div>
             </div>
           </div>
           <div class="gap-grid">
@@ -702,8 +329,8 @@
         </div>
         
         <!-- Failure Breakdown -->
-        <div class="failures-section">
-          <div class="chart-title">Failure Breakdown</div>
+        <div class="section">
+          <div class="section-title">Failure Breakdown</div>
           <div class="failures-grid">
             ${renderFailureCards(failureReasons)}
           </div>
@@ -718,6 +345,81 @@
       }
     }
     
+    function renderAlgorithmComparison(comparison) {
+      const total = comparison.ffdWins + comparison.ebafitWins + comparison.ties;
+      const ffdPct = total > 0 ? ((comparison.ffdWins / total) * 100).toFixed(1) : 0;
+      const ebafitPct = total > 0 ? ((comparison.ebafitWins / total) * 100).toFixed(1) : 0;
+      
+      return `
+        <div class="section info-highlight">
+          <div class="section-header">
+            <div>
+              <div class="section-title">Algorithm Comparison: FFD vs EB-AFIT</div>
+              <div class="section-subtitle">Comparing which algorithm finds smaller boxes more often</div>
+            </div>
+            <div class="badge info">
+              ${comparison.significantDifferences} orders differ
+            </div>
+          </div>
+          
+          <div class="algo-comparison">
+            <div class="algo-box">
+              <div class="algo-name ffd">FFD</div>
+              <div class="algo-wins" style="color: #4a9eff">${comparison.ffdWins.toLocaleString()}</div>
+              <div class="algo-label">wins (${ffdPct}%)</div>
+            </div>
+            <div class="algo-vs">vs</div>
+            <div class="algo-box">
+              <div class="algo-name ebafit">EB-AFIT</div>
+              <div class="algo-wins" style="color: #44cc88">${comparison.ebafitWins.toLocaleString()}</div>
+              <div class="algo-label">wins (${ebafitPct}%)</div>
+            </div>
+          </div>
+          <div class="algo-ties">
+            ${comparison.ties.toLocaleString()} ties (same box selected) · ${comparison.bothFailed.toLocaleString()} both failed
+          </div>
+        </div>
+      `;
+    }
+    
+    function renderUSPSAnalysis(uspsImpact, uspsAnalysis) {
+      const totalUSPSOrders = uspsImpact.reduce((sum, u) => sum + u.ordersCaptured, 0);
+      
+      return `
+        <div class="section warning-highlight">
+          <div class="section-header">
+            <div>
+              <div class="section-title">USPS Flat Rate Opportunity</div>
+              <div class="section-subtitle">Orders that could ship in USPS Flat Rate boxes instead of Texas Art boxes</div>
+            </div>
+            <div class="badge warning">
+              ${totalUSPSOrders.toLocaleString()} eligible orders
+            </div>
+          </div>
+          
+          <div class="usps-grid">
+            ${uspsImpact.map(u => `
+              <div class="usps-card ${u.ordersCaptured > 0 ? 'active' : ''}">
+                <div class="usps-box-name">${u.name}</div>
+                <div class="usps-orders">${u.ordersCaptured.toLocaleString()}</div>
+                <div class="usps-orders-label">orders could use this</div>
+                <div class="usps-weight">
+                  Weight range: ${u.minWeight.toFixed(2)} - ${u.maxWeight.toFixed(2)} lbs<br>
+                  Average: ${u.avgWeight.toFixed(2)} lbs
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          
+          <div style="margin-top: 16px; padding: 12px; background: #1a1a25; border-radius: 6px; font-size: 11px; color: #888;">
+            <strong style="color: #ffd93d;">Rate Analysis Ready:</strong> 
+            These ${totalUSPSOrders.toLocaleString()} orders have been saved for rate comparison. 
+            Run rate lookups to see actual cost savings by zone.
+          </div>
+        </div>
+      `;
+    }
+    
     function renderCandidateAnalysis(candidateImpact, candidateAnalysis, baselineAnalysis) {
       const totalCaptured = candidateImpact.reduce((sum, c) => sum + c.ordersCaptured, 0);
       const top3 = candidateImpact.slice(0, 3);
@@ -728,17 +430,13 @@
       const poorReduction = baselinePoor - candidatePoor;
       
       return `
-        <div class="candidate-section highlight">
+        <div class="section highlight">
           <div class="section-header">
             <div>
-              <div class="section-title">
-                Candidate Box Analysis
-              </div>
-              <div class="section-subtitle">
-                Testing ${simulationData.config.candidateBoxes?.length || 0} smaller box sizes against historical orders
-              </div>
+              <div class="section-title">Candidate Box Analysis</div>
+              <div class="section-subtitle">Testing ${simulationData.config.candidateBoxes?.length || 0} smaller box sizes against historical orders</div>
             </div>
-            <div class="recommendation-badge">
+            <div class="badge success">
               ${top3.map(c => c.dims).join(' + ')} recommended
             </div>
           </div>
@@ -750,9 +448,9 @@
               <div class="stat-subtext">Would use smaller boxes</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">Top 3 Boxes Capture</div>
+              <div class="stat-label">Top 3 Capture</div>
               <div class="stat-value success">${top3Captured.toLocaleString()}</div>
-              <div class="stat-subtext">${((top3Captured / totalCaptured) * 100).toFixed(0)}% of total opportunity</div>
+              <div class="stat-subtext">${((top3Captured / totalCaptured) * 100).toFixed(0)}% of opportunity</div>
             </div>
             <div class="stat-card">
               <div class="stat-label">Poor Efficiency Reduction</div>
@@ -760,13 +458,13 @@
               <div class="stat-subtext">${baselinePoor.toLocaleString()} → ${candidatePoor.toLocaleString()}</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">Candidate Boxes Tested</div>
+              <div class="stat-label">Candidates Tested</div>
               <div class="stat-value">${simulationData.config.candidateBoxes?.length || 0}</div>
               <div class="stat-subtext">Standard small box sizes</div>
             </div>
           </div>
           
-          <table class="candidate-table">
+          <table class="data-table">
             <thead>
               <tr>
                 <th>Rank</th>
@@ -782,19 +480,13 @@
               ${candidateImpact.map((c, i) => {
                 const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
                 const isTop = i < 3;
-                const topPrevBoxes = Object.entries(c.previousBoxes)
-                  .sort((a, b) => b[1] - a[1])
-                  .slice(0, 2);
+                const topPrevBoxes = Object.entries(c.previousBoxes).sort((a, b) => b[1] - a[1]).slice(0, 2);
                 
                 return `
                   <tr class="${isTop ? 'top-pick' : ''}">
                     <td><span class="rank-badge ${rankClass}">${i + 1}</span></td>
-                    <td>
-                      <div class="box-name">${c.dims}</div>
-                    </td>
-                    <td>
-                      <span class="box-volume">${c.volume} cu.in.</span>
-                    </td>
+                    <td><div class="box-name">${c.dims}</div></td>
+                    <td><span class="box-volume">${c.volume} cu.in.</span></td>
                     <td><strong>${c.ordersCaptured.toLocaleString()}</strong></td>
                     <td>
                       <div class="efficiency-change">
@@ -806,7 +498,7 @@
                     <td>
                       <div class="previous-box-list">
                         ${topPrevBoxes.map(([box, count]) => 
-                          `<span class="previous-box-item">${box.replace('Box ', '')}: ${count}</span>`
+                          `<span class="previous-box-item">${box.replace('Box ', '')}: ${count.toLocaleString()}</span>`
                         ).join('')}
                       </div>
                     </td>
@@ -822,7 +514,7 @@
     
     function renderGapCards(idealBoxAnalysis) {
       if (!idealBoxAnalysis || idealBoxAnalysis.length === 0) {
-        return '<div class="empty-state-text">No gap data available</div>';
+        return '<div style="color: #666; font-size: 12px;">No gap data available</div>';
       }
       
       const maxOrders = Math.max(...idealBoxAnalysis.map(r => r.orderCount));
@@ -860,10 +552,10 @@
     
     function renderFailureCards(failureReasons) {
       const reasonDescriptions = {
-        'no_valid_items': 'All items in order have missing dimension data',
-        'missing_skus': 'Some items lack dimension data in product catalog',
-        'no_valid_box': 'Items too large for any available box',
-        'packing_failed': 'Algorithm could not fit items (may need multi-box)'
+        'no_valid_items': 'All items have missing dimensions',
+        'missing_skus': 'Some items lack dimension data',
+        'no_valid_box': 'Items too large for any box',
+        'packing_failed': 'Algorithm couldn\'t fit items'
       };
       
       return Object.entries(failureReasons).map(([reason, count]) => `
@@ -943,18 +635,10 @@
           responsive: true,
           maintainAspectRatio: false,
           indexAxis: 'y',
-          plugins: {
-            legend: { display: false }
-          },
+          plugins: { legend: { display: false } },
           scales: {
-            x: {
-              grid: { color: '#2a2a3a' },
-              ticks: { color: '#666', font: { size: 10 } }
-            },
-            y: {
-              grid: { display: false },
-              ticks: { color: '#888', font: { size: 10 } }
-            }
+            x: { grid: { color: '#2a2a3a' }, ticks: { color: '#666', font: { size: 10 } } },
+            y: { grid: { display: false }, ticks: { color: '#888', font: { size: 10 } } }
           }
         }
       });
@@ -996,17 +680,10 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false
-          },
+          interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: {
-              labels: {
-                color: '#888',
-                font: { size: 11 },
-                usePointStyle: true
-              }
+              labels: { color: '#888', font: { size: 11 }, usePointStyle: true }
             },
             tooltip: {
               callbacks: {
@@ -1019,26 +696,13 @@
             }
           },
           scales: {
-            x: {
-              grid: { color: '#2a2a3a' },
-              ticks: { color: '#888', font: { size: 11 } }
-            },
-            y: {
-              grid: { color: '#2a2a3a' },
-              ticks: { 
-                color: '#888', 
-                font: { size: 11 },
-                callback: function(value) {
-                  return value.toLocaleString();
-                }
-              }
-            }
+            x: { grid: { color: '#2a2a3a' }, ticks: { color: '#888', font: { size: 11 } } },
+            y: { grid: { color: '#2a2a3a' }, ticks: { color: '#888', font: { size: 11 }, callback: v => v.toLocaleString() } }
           }
         }
       });
     }
     
-    // Initialize
     document.addEventListener('DOMContentLoaded', loadSimulationResults);
   </script>
 </body>
